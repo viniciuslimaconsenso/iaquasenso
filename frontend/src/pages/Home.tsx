@@ -1,8 +1,11 @@
+import { useEffect } from 'react';
 import { Header } from '../components/Header/Header';
 import { Select } from '../components/Select/Select';
 import { Table } from '../components/Table/Table';
 import { FiAlertCircle } from 'react-icons/fi';
+import { FaBroom } from 'react-icons/fa';
 import { useReports } from '../contexts/ReportsContext';
+import './styles.css';
 
 const reportTypes = [
   { value: 'Gerencial', label: 'Gerencial' },
@@ -17,7 +20,17 @@ const columns = [
 ];
 
 export const Home = () => {
-  const { filteredReports, selectedType, setSelectedType } = useReports();
+  const { filteredReports, selectedType, setSelectedType, reloadReports } = useReports();
+
+  // Recarrega os dados quando a página é montada
+  useEffect(() => {
+    console.log('Recarregando relatórios...');
+    reloadReports();
+  }, []);
+
+  const handleReset = () => {
+    setSelectedType('');
+  };
 
   const formatTableData = (data: any[]) => {
     return data.map(item => ({
@@ -49,19 +62,34 @@ export const Home = () => {
   };
 
   return (
-    <div className="container">
+    <div className="container-fluid">
       <div className="content-wrapper">
         <Header
           title="Exportar Dados"
           subtitle="Para exportar relatórios de dados, preencha os campos abaixo"
+          cadastroPath="/cadastrar"
         />
 
-        <Select
-          options={reportTypes}
-          value={selectedType}
-          onChange={(e) => setSelectedType(e.target.value)}
-          label="Tipo do relatório"
-        />
+        <div className="form-section">
+          <div className="d-flex gap-3 align-items-end">
+            <div className="flex-grow-1">
+              <Select
+                options={reportTypes}
+                value={selectedType}
+                onChange={(e) => setSelectedType(e.target.value)}
+                label="Tipo do relatório"
+              />
+            </div>
+            <button 
+              className="btn btn-outline-custom d-flex align-items-center justify-content-center gap-2"
+              onClick={handleReset}
+              style={{ height: '38px', paddingLeft: '1rem', paddingRight: '1rem' }}
+            >
+              <FaBroom />
+              <span>Limpar</span>
+            </button>
+          </div>
+        </div>
 
         {renderContent()}
       </div>

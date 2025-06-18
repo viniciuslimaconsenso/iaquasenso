@@ -10,6 +10,7 @@ interface ReportsContextData {
   setSelectedType: (type: string) => void;
   selectedType: string;
   isLoaded: boolean;
+  reloadReports: () => Promise<void>;
 }
 
 const ReportsContext = createContext<ReportsContextData>({} as ReportsContextData);
@@ -21,24 +22,24 @@ export function ReportsProvider({ children }: { children: ReactNode }) {
   const [isLoaded, setIsLoaded] = useState(false);
   const { setIsLoading } = useLoading();
 
+  const loadReports = async () => {
+    try {
+      setIsLoading(true);
+      const data = await getRelatorios();
+      console.log('Dados retornados da API:', data);
+      setReports(data);
+      setIsLoaded(true);
+    } catch (error) {
+      console.error('Erro ao carregar relatórios:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Carrega todos os relatórios ao iniciar
   useEffect(() => {
-    const loadReports = async () => {
-      try {
-        setIsLoading(true);
-        const data = await getRelatorios();
-        console.log('Dados retornados da API:', data);
-        setReports(data);
-        setIsLoaded(true);
-      } catch (error) {
-        console.error('Erro ao carregar relatórios:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     loadReports();
-  }, [setIsLoading]);
+  }, []);
 
   // Filtra os relatórios quando o tipo é selecionado
   useEffect(() => {
@@ -59,7 +60,8 @@ export function ReportsProvider({ children }: { children: ReactNode }) {
         filteredReports, 
         setSelectedType, 
         selectedType,
-        isLoaded 
+        isLoaded,
+        reloadReports: loadReports
       }}
     >
       {children}

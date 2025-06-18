@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Home } from './pages/Home';
+import { Register } from './pages/Register';
 import { LoadingProvider } from './contexts/LoadingContext';
 import { ReportsProvider } from './contexts/ReportsContext';
 import { LoadingOverlay } from './components/LoadingOverlay/LoadingOverlay';
@@ -13,6 +14,7 @@ function App() {
         <Router>
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/cadastrar" element={<Register />} />
           </Routes>
         </Router>
       </ReportsProvider>

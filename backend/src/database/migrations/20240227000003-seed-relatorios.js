@@ -1,6 +1,6 @@
 'use strict';
 
-module.exports = {
+const migration = {
   async up(queryInterface, Sequelize) {
     // Primeiro, vamos buscar os IDs dos tipos de relatório
     const tiposRelatorio = await queryInterface.sequelize.query(
@@ -54,4 +54,6 @@ module.exports = {
   async down(queryInterface, Sequelize) {
     await queryInterface.bulkDelete('relatorios', null, {});
   }
-}; 
+};
+
+export default migration; 

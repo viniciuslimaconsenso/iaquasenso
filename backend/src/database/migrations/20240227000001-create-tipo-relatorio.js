@@ -1,6 +1,6 @@
 'use strict';
 
-module.exports = {
+const migration = {
   up: async (queryInterface, Sequelize) => {
     await queryInterface.createTable('tipos_relatorio', {
       id: {
@@ -35,4 +35,6 @@ module.exports = {
   down: async (queryInterface, Sequelize) => {
     await queryInterface.dropTable('tipos_relatorio');
   }
-}; 
+};
+
+export default migration; 

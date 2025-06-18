@@ -1,0 +1,48 @@
+.input-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.input-container .form-label {
+  color: var(--title);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.input-container .form-control {
+  padding: 0.5rem 1rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  transition: border-color 0.15s ease-in-out;
+}
+
+/* Remove o focus padrão do Bootstrap */
+.input-container .form-control:focus {
+  border-color: var(--primary);
+  box-shadow: none;
+  outline: none;
+}
+
+/* Remove o focus do Bootstrap em todos os estados */
+.form-control:focus,
+.form-control.focus,
+.form-control:active,
+.form-control.active {
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Estilo para inputs com erro */
+.input-container .form-control.is-invalid {
+  border-color: var(--danger);
+  background-image: none;
+  padding-right: 1rem;
+}
+
+.input-container .form-control.is-invalid:focus {
+  border-color: var(--danger);
+  box-shadow: none;
+} 

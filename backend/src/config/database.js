@@ -1,6 +1,6 @@
 import 'dotenv/config';
 
-export default {
+const config = {
   dialect: 'postgres',
   host: process.env.DB_HOST || 'localhost',
   port: process.env.DB_PORT || 5432,
@@ -11,4 +11,6 @@ export default {
     timestamps: true,
     underscored: true,
   },
-}; 
+};
+
+export default config; 

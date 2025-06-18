@@ -1,15 +1,25 @@
+import { useEffect } from 'react';
 import { useState } from 'react';
+import { FaSort, FaSortUp, FaSortDown } from 'react-icons/fa';
 import './Table.css';
 
 interface Column {
   key: string;
   header: string;
+  subheader?: string;
 }
 
 interface TableProps {
   data: any[];
   columns: Column[];
   itemsPerPageOptions?: number[];
+}
+
+type SortDirection = 'asc' | 'desc' | null;
+
+interface SortConfig {
+  key: string;
+  direction: SortDirection;
 }
 
 export const Table = ({ 
@@ -19,11 +29,76 @@ export const Table = ({
 }: TableProps) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(itemsPerPageOptions[0]);
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'id', direction: 'asc' });
+  const [sortedData, setSortedData] = useState([...data]);
 
-  const totalPages = Math.ceil(data.length / itemsPerPage);
+  useEffect(() => {
+    const sorted = [...data].sort((a, b) => {
+      if (sortConfig.direction === null) {
+        return 0;
+      }
+
+      let aValue = a[sortConfig.key];
+      let bValue = b[sortConfig.key];
+
+      // Tratamento especial para campos aninhados (como tipo.tipo)
+      if (sortConfig.key === 'tipo') {
+        aValue = a.tipo.tipo;
+        bValue = b.tipo.tipo;
+      }
+
+      // Converter para minúsculas se for string
+      if (typeof aValue === 'string') {
+        aValue = aValue.toLowerCase();
+        bValue = bValue.toLowerCase();
+      }
+
+      if (aValue < bValue) {
+        return sortConfig.direction === 'asc' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return sortConfig.direction === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+
+    setSortedData(sorted);
+  }, [data, sortConfig]);
+
+  const handleSort = (key: string) => {
+    let direction: SortDirection = 'desc';
+    
+    if (sortConfig.key === key) {
+      if (sortConfig.direction === 'desc') {
+        direction = 'asc';
+      } else if (sortConfig.direction === 'asc') {
+        direction = null;
+      }
+    }
+
+    setSortConfig({ key, direction });
+  };
+
+  const getSortIcon = (columnKey: string) => {
+    if (sortConfig.key !== columnKey) {
+      return <FaSort className="sort-icon" />;
+    }
+    
+    if (sortConfig.direction === 'asc') {
+      return <FaSortUp className="sort-icon active" />;
+    }
+    
+    if (sortConfig.direction === 'desc') {
+      return <FaSortDown className="sort-icon active" />;
+    }
+
+    return <FaSort className="sort-icon" />;
+  };
+
+  const totalPages = Math.ceil(sortedData.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentData = data.slice(startIndex, endIndex);
+  const currentData = sortedData.slice(startIndex, endIndex);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -128,7 +203,17 @@ export const Table = ({
         <thead>
           <tr>
             {columns.map((column) => (
-              <th key={column.key}>{column.header}</th>
+              <th 
+                key={column.key}
+                onClick={() => handleSort(column.key)}
+                className="sortable-header"
+              >
+                <div className="header-content">
+                  <span>{column.header}</span>
+                  {column.subheader && <span className="subheader">{column.subheader}</span>}
+                  {getSortIcon(column.key)}
+                </div>
+              </th>
             ))}
           </tr>
         </thead>
@@ -145,7 +230,7 @@ export const Table = ({
 
       <div className="pagination-container">
         <div className="records-info">
-          Mostrando {startIndex + 1} a {Math.min(endIndex, data.length)} de {data.length} entradas
+          Mostrando {startIndex + 1} a {Math.min(endIndex, sortedData.length)} de {sortedData.length} entradas
         </div>
         <nav>
           <ul className="pagination">

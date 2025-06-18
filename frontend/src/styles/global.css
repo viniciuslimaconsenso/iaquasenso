@@ -1,10 +1,10 @@
-@import 'bootstrap/dist/css/bootstrap.min.css';
-
 :root {
   --primary: #3577F1;
   --title: #495057;
   --subtitle: #868686;
   --background-color: #f8f9fa;
+  --container-max-width: 1440px;
+  --container-padding: 1rem;
 }
 
 * {
@@ -29,14 +29,15 @@ body {
   display: flex;
   flex-direction: column;
   flex: 1;
+  width: 100%;
 }
 
-.container {
-  padding: 40px;
+.container-fluid {
+  padding: var(--container-padding);
   min-height: 100vh;
   width: 100%;
-  max-width: 100% !important;
-  margin: 0 !important;
+  max-width: var(--container-max-width);
+  margin: 0 auto !important;
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -45,25 +46,27 @@ body {
 .content-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 0;
-  padding: 2rem 0;
+  padding: 1rem 0;
   width: 100%;
-  min-width: 1400px;
   overflow-x: auto;
+}
+
+.form-section {
+  width: 100%;
+  max-width: 100%;
 }
 
 .table-container {
   background-color: white;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  padding: 0;
-  margin-top: 2rem;
+  margin-top: 1rem;
   flex: 1;
   display: flex;
   flex-direction: column;
   width: 100%;
-  min-width: 1400px;
   min-height: 200px;
+  overflow-x: auto;
 }
 
 .loading-container {
@@ -71,13 +74,12 @@ body {
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   padding: 1rem;
-  margin-top: 2rem;
+  margin-top: 1rem;
   flex: 1;
   display: flex;
   justify-content: center;
   align-items: center;
   width: 100%;
-  min-width: 1400px;
   min-height: 200px;
 }
 
@@ -104,15 +106,15 @@ body {
 .table-responsive {
   flex: 1;
   width: 100%;
+  overflow-x: auto;
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   width: 100%;
-  min-width: 1400px;
 }
 
 .header-content {
@@ -121,7 +123,7 @@ body {
 
 .header-title {
   color: var(--title);
-  font-size: 16px;
+  font-size: clamp(1rem, 2vw, 1.25rem);
   font-weight: 500;
   margin-bottom: 0.5rem;
   font-family: 'Poppins', sans-serif;
@@ -129,15 +131,13 @@ body {
 
 .header-subtitle {
   color: var(--subtitle);
-  font-size: 12px;
+  font-size: clamp(0.75rem, 1.5vw, 0.875rem);
   font-weight: 400;
   font-family: 'Poppins', sans-serif;
 }
 
 .select-container {
-  margin-bottom: 1.5rem;
   width: 100%;
-  min-width: 1400px;
 }
 
 .pagination-container {
@@ -145,6 +145,8 @@ body {
   justify-content: space-between;
   align-items: center;
   margin-top: 1rem;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .btn-primary {
@@ -176,4 +178,45 @@ body {
   width: 3rem;
   height: 3rem;
   color: var(--primary) !important;
+}
+
+/* Breakpoints responsivos */
+@media (min-width: 768px) {
+  :root {
+    --container-padding: 2rem;
+  }
+  
+  .content-wrapper {
+    padding: 1.5rem 0;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --container-padding: 3rem;
+  }
+  
+  .content-wrapper {
+    padding: 2rem 0;
+  }
+}
+
+@media (min-width: 1440px) {
+  :root {
+    --container-padding: 4rem;
+  }
+}
+
+/* Remove o focus do Bootstrap globalmente */
+input:focus,
+select:focus,
+textarea:focus,
+button:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.form-control:focus {
+  border-color: var(--primary) !important;
+  box-shadow: none !important;
 } 
