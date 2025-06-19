@@ -2,7 +2,7 @@
   --primary: #3577F1;
   --title: #495057;
   --subtitle: #868686;
-  --background-color: #f8f9fa;
+  --background-color: #ffffff;
   --container-max-width: 1440px;
   --container-padding: 1rem;
 }
@@ -17,7 +17,7 @@
 body {
   margin: 0;
   padding: 0;
-  background-color: #F3F3F9;
+  background-color: #ffffff;
   min-height: 100vh;
   display: flex;
   flex-direction: column;

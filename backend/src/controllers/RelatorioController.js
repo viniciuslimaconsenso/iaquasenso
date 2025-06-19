@@ -39,12 +39,13 @@ class RelatorioController {
 
   async store(req, res) {
     try {
-      const { nome, descricao, tipo_relatorio_id } = req.body;
+      const { nome, descricao, tipo_relatorio_id, query } = req.body;
 
       const relatorio = await Relatorio.create({
         nome,
         descricao,
-        tipo_relatorio_id
+        tipo_relatorio_id,
+        query
       });
 
       return res.status(201).json(relatorio);

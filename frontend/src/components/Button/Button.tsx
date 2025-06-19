@@ -1,9 +1,10 @@
-import type { ButtonHTMLAttributes } from 'react';
+import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'outline-custom';
   to?: string;
+  icon?: ReactNode;
 }
 
 export const Button = ({ 
@@ -13,6 +14,7 @@ export const Button = ({
   type = 'button',
   className = '',
   onClick,
+  icon,
   ...props 
 }: ButtonProps) => {
   const navigate = useNavigate();
@@ -33,9 +35,9 @@ export const Button = ({
 
   const getButtonClass = () => {
     if (variant === 'outline-custom') {
-      return `btn btn-outline-custom ${className}`;
+      return `btn btn-outline-custom d-flex align-items-center gap-2 ${className}`;
     }
-    return `btn btn-${variant} ${className}`;
+    return `btn btn-${variant} d-flex align-items-center gap-2 ${className}`;
   };
 
   return (
@@ -45,6 +47,7 @@ export const Button = ({
       onClick={handleClick}
       {...props}
     >
+      {icon}
       {children}
     </button>
   );

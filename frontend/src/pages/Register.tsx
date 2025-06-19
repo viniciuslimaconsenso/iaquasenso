@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header/Header';
 import { Input } from '../components/Input/Input';
 import { Select } from '../components/Select/Select';
+import { TextArea } from '../components/TextArea/TextArea';
 import { Button } from '../components/Button/Button';
 import { api } from '../services/api';
 import Swal from 'sweetalert2';
@@ -17,11 +18,13 @@ export const Register = () => {
   const navigate = useNavigate();
   const [nome, setNome] = useState('');
   const [descricao, setDescricao] = useState('');
+  const [query, setQuery] = useState('');
   const [tipoRelatorioId, setTipoRelatorioId] = useState('');
   const [tiposRelatorio, setTiposRelatorio] = useState<TipoRelatorio[]>([]);
   const [errors, setErrors] = useState({
     nome: '',
     descricao: '',
+    query: '',
     tipoRelatorioId: ''
   });
 
@@ -40,12 +43,13 @@ export const Register = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrors({ nome: '', descricao: '', tipoRelatorioId: '' });
+    setErrors({ nome: '', descricao: '', query: '', tipoRelatorioId: '' });
 
     // Validação
     const newErrors = {
       nome: nome.trim() === '' ? 'Nome é obrigatório' : '',
       descricao: descricao.trim() === '' ? 'Descrição é obrigatória' : '',
+      query: query.trim() === '' ? 'Query é obrigatória' : '',
       tipoRelatorioId: tipoRelatorioId === '' ? 'Tipo de relatório é obrigatório' : ''
     };
 
@@ -58,6 +62,7 @@ export const Register = () => {
       await api.post('/relatorios', {
         nome,
         descricao,
+        query,
         tipo_relatorio_id: Number(tipoRelatorioId)
       });
 
@@ -81,6 +86,7 @@ export const Register = () => {
         // Limpa o formulário para um novo cadastro
         setNome('');
         setDescricao('');
+        setQuery('');
         setTipoRelatorioId('');
       } else {
         // Volta para a tabela
@@ -122,6 +128,14 @@ export const Register = () => {
               onChange={(e) => setDescricao(e.target.value)}
               placeholder="Digite a descrição do relatório"
               error={errors.descricao}
+            />
+
+            <TextArea
+              label="Query"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Digite a query SQL do relatório"
+              error={errors.query}
             />
 
             <Select

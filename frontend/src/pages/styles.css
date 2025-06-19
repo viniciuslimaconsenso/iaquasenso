@@ -89,4 +89,69 @@
 .swal2-cancel:hover {
   background-color: var(--primary) !important;
   color: white !important;
+}
+
+.container-fluid {
+  padding: 2rem;
+  background-color: var(--background);
+  min-height: 100vh;
+}
+
+.content-wrapper {
+  background-color: white;
+  border-radius: 8px;
+  padding: 2rem;
+}
+
+.form-section {
+  margin: 2rem 0;
+}
+
+.table-container {
+  margin-top: 2rem;
+}
+
+.results-container {
+  margin-top: 2rem;
+}
+
+.results-title {
+  font-size: 1.25rem;
+  color: var(--title);
+  margin: 0;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  background-color: var(--background);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.empty-state-icon {
+  font-size: 2.5rem;
+  color: var(--text-color);
+  margin-bottom: 1rem;
+}
+
+.empty-state-text {
+  color: var(--text-color);
+  font-size: 1rem;
+}
+
+.btn-outline-custom {
+  color: var(--primary);
+  border-color: var(--primary);
+  background-color: transparent;
+  transition: all 0.2s ease;
+}
+
+.btn-outline-custom:hover {
+  color: white;
+  background-color: var(--primary);
+  border-color: var(--primary);
 } 

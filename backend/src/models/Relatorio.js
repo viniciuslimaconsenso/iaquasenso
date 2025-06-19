@@ -11,6 +11,10 @@ class Relatorio extends Model {
         type: DataTypes.TEXT,
         allowNull: true,
       },
+      query: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
     }, {
       sequelize,
       tableName: 'relatorios',
