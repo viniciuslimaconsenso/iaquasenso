@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { FiArrowUp, FiArrowDown } from 'react-icons/fi';
 import './Table.css';
 
 interface Column {
@@ -13,6 +14,11 @@ interface TableProps {
   itemsPerPageOptions?: number[];
 }
 
+type SortConfig = {
+  key: string;
+  direction: 'asc' | 'desc';
+} | null;
+
 export const Table: React.FC<TableProps> = ({ 
   data, 
   columns, 
@@ -21,9 +27,44 @@ export const Table: React.FC<TableProps> = ({
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(itemsPerPageOptions[0]);
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: columns[0].key, direction: 'desc' });
 
-  // Ordenação padrão
-  const sortedData = [...data];
+  // Função de ordenação
+  const sortData = (data: any[]) => {
+    if (!sortConfig) return data;
+
+    return [...data].sort((a, b) => {
+      const aValue = a[sortConfig.key];
+      const bValue = b[sortConfig.key];
+
+      if (aValue === null || aValue === undefined) return 1;
+      if (bValue === null || bValue === undefined) return -1;
+
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        const comparison = aValue.localeCompare(bValue, 'pt-BR', { sensitivity: 'base' });
+        return sortConfig.direction === 'asc' ? comparison : -comparison;
+      }
+
+      const comparison = aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+      return sortConfig.direction === 'asc' ? comparison : -comparison;
+    });
+  };
+
+  // Handler para clique no cabeçalho
+  const handleSort = (key: string) => {
+    setSortConfig(currentSort => {
+      if (!currentSort || currentSort.key !== key) {
+        return { key, direction: 'desc' };
+      }
+      if (currentSort.direction === 'desc') {
+        return { key, direction: 'asc' };
+      }
+      return { key, direction: 'desc' };
+    });
+  };
+
+  // Dados ordenados
+  const sortedData = sortData(data);
 
   // Cálculo da paginação
   const totalPages = Math.ceil(sortedData.length / itemsPerPage);
@@ -91,6 +132,14 @@ export const Table: React.FC<TableProps> = ({
     return buttons;
   };
 
+  // Renderiza o ícone de ordenação
+  const renderSortIcon = (columnKey: string) => {
+    if (!sortConfig || sortConfig.key !== columnKey) {
+      return null;
+    }
+    return sortConfig.direction === 'asc' ? <FiArrowUp className="sort-icon active" /> : <FiArrowDown className="sort-icon active" />;
+  };
+
   return (
     <div className="table-content">
       <div className="table-header">
@@ -115,7 +164,16 @@ export const Table: React.FC<TableProps> = ({
           <thead>
             <tr>
               {columns.map((column) => (
-                <th key={column.key}>{column.header}</th>
+                <th 
+                  key={column.key}
+                  className="sortable-header"
+                  onClick={() => handleSort(column.key)}
+                >
+                  <div className="header-content">
+                    <span>{column.header}</span>
+                    {renderSortIcon(column.key)}
+                  </div>
+                </th>
               ))}
             </tr>
           </thead>

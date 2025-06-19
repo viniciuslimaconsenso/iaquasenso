@@ -14,6 +14,26 @@ interface TipoRelatorio {
   tipo: string;
 }
 
+// Lista de palavras proibidas
+const PROHIBITED_WORDS = [
+  'insert',
+  'update',
+  'delete',
+  'drop',
+  'truncate',
+  'alter',
+  'create',
+  'replace',
+  'exec',
+  'execute',
+  'relatorios',
+  'tipos_relatorio',
+  ';',
+  '--',
+  '/*',
+  '*/'
+];
+
 export const Register = () => {
   const navigate = useNavigate();
   const [nome, setNome] = useState('');
@@ -28,6 +48,55 @@ export const Register = () => {
     tipoRelatorioId: ''
   });
 
+  // Função para verificar palavras proibidas
+  const checkProhibitedWords = (value: string) => {
+    const lowerValue = value.toLowerCase();
+    return PROHIBITED_WORDS.some(word => lowerValue.includes(word.toLowerCase()));
+  };
+
+  // Handler para mudança na query com validação em tempo real
+  const handleQueryChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    setQuery(value);
+    
+    if (checkProhibitedWords(value)) {
+      setErrors(prev => ({ ...prev, query: 'Comando não autorizado' }));
+    } else {
+      setErrors(prev => ({ ...prev, query: '' }));
+    }
+  };
+
+  // Validação em tempo real para campos obrigatórios
+  const handleNomeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setNome(value);
+    if (value.trim() === '') {
+      setErrors(prev => ({ ...prev, nome: 'Nome é obrigatório' }));
+    } else {
+      setErrors(prev => ({ ...prev, nome: '' }));
+    }
+  };
+
+  const handleDescricaoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setDescricao(value);
+    if (value.trim() === '') {
+      setErrors(prev => ({ ...prev, descricao: 'Descrição é obrigatória' }));
+    } else {
+      setErrors(prev => ({ ...prev, descricao: '' }));
+    }
+  };
+
+  const handleTipoRelatorioChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    setTipoRelatorioId(value);
+    if (value === '') {
+      setErrors(prev => ({ ...prev, tipoRelatorioId: 'Tipo de relatório é obrigatório' }));
+    } else {
+      setErrors(prev => ({ ...prev, tipoRelatorioId: '' }));
+    }
+  };
+
   useEffect(() => {
     const fetchTiposRelatorio = async () => {
       try {
@@ -41,20 +110,22 @@ export const Register = () => {
     fetchTiposRelatorio();
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrors({ nome: '', descricao: '', query: '', tipoRelatorioId: '' });
-
-    // Validação
+  const validateForm = () => {
     const newErrors = {
       nome: nome.trim() === '' ? 'Nome é obrigatório' : '',
       descricao: descricao.trim() === '' ? 'Descrição é obrigatória' : '',
-      query: query.trim() === '' ? 'Query é obrigatória' : '',
+      query: query.trim() === '' ? 'Query é obrigatória' : checkProhibitedWords(query) ? 'Comando não autorizado' : '',
       tipoRelatorioId: tipoRelatorioId === '' ? 'Tipo de relatório é obrigatório' : ''
     };
 
-    if (Object.values(newErrors).some(error => error !== '')) {
-      setErrors(newErrors);
+    setErrors(newErrors);
+    return !Object.values(newErrors).some(error => error !== '');
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!validateForm()) {
       return;
     }
 
@@ -66,7 +137,6 @@ export const Register = () => {
         tipo_relatorio_id: Number(tipoRelatorioId)
       });
 
-      // Mostra o popup de sucesso
       const result = await Swal.fire({
         title: 'Relatório cadastrado com sucesso.',
         icon: 'success',
@@ -88,6 +158,12 @@ export const Register = () => {
         setDescricao('');
         setQuery('');
         setTipoRelatorioId('');
+        setErrors({
+          nome: '',
+          descricao: '',
+          query: '',
+          tipoRelatorioId: ''
+        });
       } else {
         // Volta para a tabela
         navigate('/');
@@ -117,7 +193,7 @@ export const Register = () => {
             <Input
               label="Nome"
               value={nome}
-              onChange={(e) => setNome(e.target.value)}
+              onChange={handleNomeChange}
               placeholder="Digite o nome do relatório"
               error={errors.nome}
             />
@@ -125,7 +201,7 @@ export const Register = () => {
             <Input
               label="Descrição"
               value={descricao}
-              onChange={(e) => setDescricao(e.target.value)}
+              onChange={handleDescricaoChange}
               placeholder="Digite a descrição do relatório"
               error={errors.descricao}
             />
@@ -133,15 +209,25 @@ export const Register = () => {
             <TextArea
               label="Query"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={handleQueryChange}
               placeholder="Digite a query SQL do relatório"
               error={errors.query}
             />
 
+            <div className="available-tables">
+              <div className="available-tables-title">Tabelas disponíveis para consulta</div>
+              <div className="table-tags">
+                <span className="table-tag">clientes</span>
+                <span className="table-tag">produtos</span>
+                <span className="table-tag">vendas</span>
+                <span className="table-tag">venda_itens</span>
+              </div>
+            </div>
+
             <Select
               label="Tipo do Relatório"
               value={tipoRelatorioId}
-              onChange={(e) => setTipoRelatorioId(e.target.value)}
+              onChange={handleTipoRelatorioChange}
               options={tiposRelatorio.map(tipo => ({
                 value: tipo.id.toString(),
                 label: tipo.tipo

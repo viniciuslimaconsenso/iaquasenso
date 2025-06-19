@@ -29,18 +29,19 @@
 }
 
 .form-group textarea.is-invalid {
-  border-color: var(--danger);
+  border-color: #dc3545;
+  border-width: 1px;
   background-image: none;
-  padding-right: 1rem;
 }
 
 .form-group textarea.is-invalid:focus {
-  border-color: var(--danger);
+  border-color: #dc3545;
   box-shadow: none;
 }
 
 .form-group .invalid-feedback {
-  color: var(--danger);
-  font-size: 12px;
-  margin-top: 4px;
+  display: block;
+  color: #dc3545;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
 } 

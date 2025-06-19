@@ -1,4 +1,5 @@
 import { Button } from '../Button/Button';
+import './Header.css';
 
 interface HeaderProps {
   title: string;

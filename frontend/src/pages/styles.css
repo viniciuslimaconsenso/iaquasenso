@@ -154,4 +154,65 @@
   color: white;
   background-color: var(--primary);
   border-color: var(--primary);
+}
+
+.available-tables {
+  margin-top: 0.5rem;
+}
+
+.available-tables-title {
+  font-size: 0.875rem;
+  color: var(--text-color);
+  margin-bottom: 0.5rem;
+}
+
+.table-tags {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.table-tag {
+  background-color: var(--primary);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Remove all focus effects from Register form inputs */
+.register-form .form-control,
+.register-form textarea,
+.register-form .form-select {
+  transition: none !important;
+}
+
+.register-form .form-control:focus,
+.register-form textarea:focus,
+.register-form .form-select:focus {
+  border-color: #ced4da !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.register-form .form-control:focus-visible,
+.register-form textarea:focus-visible,
+.register-form .form-select:focus-visible {
+  outline: none !important;
+}
+
+/* Remove focus ring from Firefox */
+.register-form .form-control:-moz-focusring,
+.register-form textarea:-moz-focusring,
+.register-form .form-select:-moz-focusring {
+  outline: none !important;
+  outline-offset: 0 !important;
+}
+
+/* Remove focus ring from Chrome */
+.register-form .form-control:focus:not(:focus-visible),
+.register-form textarea:focus:not(:focus-visible),
+.register-form .form-select:focus:not(:focus-visible) {
+  outline: none !important;
 } 

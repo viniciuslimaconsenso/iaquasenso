@@ -30,6 +30,26 @@
   box-shadow: none;
 }
 
+.select.is-invalid,
+.form-select.is-invalid {
+  border-color: #dc3545;
+  border-width: 1px;
+  background-image: none;
+}
+
+.select.is-invalid:focus,
+.form-select.is-invalid:focus {
+  border-color: #dc3545;
+  box-shadow: none;
+}
+
+.select-container .invalid-feedback {
+  display: block;
+  color: #dc3545;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+}
+
 /* Remove a seta padrão do select do Bootstrap */
 .form-select {
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");

@@ -1,0 +1,27 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+}
+
+.header-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.header-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--title);
+  margin: 0;
+  text-align: left;
+}
+
+.header-subtitle {
+  font-size: 0.875rem;
+  color: var(--text-color);
+  margin: 0;
+  text-align: left;
+} 
