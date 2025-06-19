@@ -26,6 +26,14 @@ O projeto está dividido em duas partes principais:
 - PostgreSQL (v14 ou superior)
 - NPM ou Yarn
 
+  ## 🔧 Pré - Instalação
+
+### - Configure o PostgreSQL criando um banco de dados chamado iaquasenso e a senha "123456"
+
+Ou
+
+### Configure o arquivo na pasta database com os dados do banco
+
 ## 🔧 Instalação
 
 ### 1. Clone o repositório
@@ -40,16 +48,6 @@ cd [NOME_DO_REPOSITÓRIO]
 ```bash
 cd backend
 npm install
-```
-
-Configure o arquivo `.env` com suas variáveis de ambiente:
-
-```env
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=seu_usuario
-DB_PASSWORD=sua_senha
-DB_NAME=iaquasenso
 ```
 
 Execute as migrations:
