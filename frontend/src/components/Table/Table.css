@@ -204,4 +204,59 @@
 
 .sortable-header:hover .sort-icon {
   opacity: 0.7;
+}
+
+.actions-cell {
+  white-space: nowrap;
+  text-align: center;
+  padding: 0.5rem !important;
+}
+
+.actions-wrapper {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.table-row:hover .actions-wrapper {
+  opacity: 1;
+}
+
+.action-button {
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  margin: 0 0.25rem;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 35px;
+  height: 35px;
+}
+
+.action-button:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  transform: translateY(-1px);
+}
+
+.action-button svg {
+  width: 1.2em;
+  height: 1.2em;
+}
+
+/* Specific icon colors */
+.action-button[title="Baixar PDF"] svg {
+  color: #3577F1;
+}
+
+.action-button[title="Excluir"] svg {
+  color: #ff0000;
+}
+
+.actions-header {
+  text-align: center;
+  min-width: 120px;
+  color: transparent; /* Make the header text transparent */
 } 

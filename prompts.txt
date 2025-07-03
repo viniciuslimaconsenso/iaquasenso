@@ -1,0 +1,21 @@
+Lista de Prompts - iAquaSenso
+
+1. Na tela de cadastrar, abaixo do input text area de query quero que você adicione tags pequenas para indicar quais tabelas podem ser manipuladas, são elas clientes, produtos, vendas
+
+2. Na tela de cadastro, no text area da query, caso o usuário digite qualquer uma das palavras proibidas definidas o text area deve mostrar o erro "Comando não autorizado" em tempo real e o a borda do text area deve ficar vermelha
+
+3. Quando dá erro apenas o input select está ficando vermelho, conserte isso por favor
+
+4. Remove o efeito dos inputs que ao focar a cor fica #3577F1, gostaria de remover esse focus
+
+5. Existe alguma forma de remover o efeito de Focus nos inputs do bootstrap desse form? se sim faça isso, não quero efeito de focus
+
+6. Na tabela, faça um sistema de ordenação de colunas, tanto na tabela padrão quanto na tabela Resultado, ou seja, ao clicar na TH ele ordena em ordem crescente ou decrescente. Ao alternar entre as ordens, será exibido um ícone de seta para cima ou para baixo. Por padrão ela começa ordenando em ordem decrescente
+
+7. Na div header o titulo Exportar Dados está na mesma linha do texto "Para exportar relatórios de dados, preencha os campos abaixo". Gostaria que o texto ficasse abaixo do titulo
+
+8. Você realmente colocou o texto abaixo do titulo, no header, mas agr preciso que eles sejam alinhados a esquerda
+
+9. Remove o align itens da classe .header-content
+
+10. Modifique o README do projeto para adicionar uma linha com Sugestões de SELECT para utilizar na tela Register, das tabelas vendas, produtos, clientes, venda_tipo 

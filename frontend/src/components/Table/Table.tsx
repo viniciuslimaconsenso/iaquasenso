@@ -7,11 +7,19 @@ interface Column {
   header: string;
 }
 
+interface Action {
+  icon: React.ReactNode;
+  onClick: (row: any) => void;
+  hoverColor?: string;
+  title?: string;
+}
+
 interface TableProps {
   data: any[];
   columns: Column[];
   onRowClick?: (row: any) => void;
   itemsPerPageOptions?: number[];
+  actions?: Action[];
 }
 
 type SortConfig = {
@@ -23,7 +31,8 @@ export const Table: React.FC<TableProps> = ({
   data, 
   columns, 
   onRowClick,
-  itemsPerPageOptions = [10, 25, 50, 100]
+  itemsPerPageOptions = [10, 25, 50, 100],
+  actions
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(itemsPerPageOptions[0]);
@@ -175,18 +184,47 @@ export const Table: React.FC<TableProps> = ({
                   </div>
                 </th>
               ))}
+              {actions && actions.length > 0 && (
+                <th className="actions-header">&nbsp;</th>
+              )}
             </tr>
           </thead>
           <tbody>
             {currentData.map((row, index) => (
               <tr 
                 key={index} 
-                onClick={() => onRowClick && onRowClick(row)}
-                className={onRowClick ? 'clickable-row' : ''}
+                onClick={(e) => {
+                  // Prevent row click when clicking action buttons
+                  if ((e.target as HTMLElement).closest('.action-button')) {
+                    e.stopPropagation();
+                    return;
+                  }
+                  onRowClick && onRowClick(row);
+                }}
+                className={`${onRowClick ? 'clickable-row' : ''} table-row`}
               >
                 {columns.map((column) => (
                   <td key={`${index}-${column.key}`}>{row[column.key]}</td>
                 ))}
+                {actions && actions.length > 0 && (
+                  <td className="actions-cell">
+                    <div className="actions-wrapper">
+                      {actions.map((action, actionIndex) => (
+                        <button
+                          key={actionIndex}
+                          className="action-button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            action.onClick(row);
+                          }}
+                          title={action.title}
+                        >
+                          {action.icon}
+                        </button>
+                      ))}
+                    </div>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

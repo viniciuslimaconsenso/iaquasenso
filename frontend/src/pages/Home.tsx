@@ -3,10 +3,11 @@ import { Header } from '../components/Header/Header';
 import { Select } from '../components/Select/Select';
 import { Table } from '../components/Table/Table';
 import { Button } from '../components/Button/Button';
-import { FiAlertCircle, FiDownload } from 'react-icons/fi';
+import { FiAlertCircle, FiDownload, FiTrash, FiPrinter } from 'react-icons/fi';
 import { FaBroom } from 'react-icons/fa';
 import { useReports } from '../contexts/ReportsContext';
 import { api } from '../services/api';
+import { ConfirmationModal } from '../components/ConfirmationModal/ConfirmationModal';
 import Swal from 'sweetalert2';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -30,6 +31,19 @@ export const Home = () => {
   const [queryResults, setQueryResults] = useState<any[]>([]);
   const [resultColumns, setResultColumns] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [modalConfig, setModalConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    confirmButtonText?: string;
+    confirmButtonVariant?: string;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
 
   // Recarrega os dados quando a página é montada
   useEffect(() => {
@@ -142,6 +156,129 @@ export const Home = () => {
     }));
   };
 
+  const handleDelete = async (report: any) => {
+    try {
+      await api.delete(`/relatorios/${report.id}`);
+      await reloadReports();
+      Swal.fire({
+        title: 'Sucesso!',
+        text: 'Relatório excluído com sucesso!',
+        icon: 'success',
+        confirmButtonColor: 'var(--primary)'
+      });
+    } catch (error: any) {
+      Swal.fire({
+        title: 'Erro',
+        text: error.response?.data?.error || 'Erro ao excluir o relatório.',
+        icon: 'error',
+        confirmButtonColor: 'var(--primary)'
+      });
+    }
+  };
+
+  const handleDownloadPDF = async (report: any) => {
+    try {
+      setIsLoading(true);
+      const response = await api.post('/query/execute', {
+        query: report.query
+      });
+
+      if (response.data && response.data.length > 0) {
+        const doc = new jsPDF();
+        
+        // Configuração do cabeçalho do PDF
+        doc.setFontSize(16);
+        doc.text(report.nome, 14, 15);
+        doc.setFontSize(10);
+        doc.text(`Data de geração: ${new Date().toLocaleDateString('pt-BR')}`, 14, 22);
+        
+        // Extrair colunas do primeiro resultado
+        const columns = Object.keys(response.data[0]);
+        const headers = columns.map(col => 
+          col.charAt(0).toUpperCase() + col.slice(1).replace(/_/g, ' ')
+        );
+        
+        // Preparar dados para a tabela
+        const data = response.data.map((row: any) => 
+          columns.map(col => row[col]?.toString() || '')
+        );
+        
+        // Configuração e geração da tabela
+        autoTable(doc, {
+          head: [headers],
+          body: data,
+          startY: 30,
+          styles: {
+            fontSize: 8,
+            cellPadding: 2,
+          },
+          headStyles: {
+            fillColor: [53, 119, 241],
+            textColor: [255, 255, 255],
+            fontStyle: 'bold',
+          },
+          alternateRowStyles: {
+            fillColor: [245, 245, 245],
+          },
+        });
+        
+        // Salvar o PDF
+        doc.save(`${report.nome.toLowerCase().replace(/\s+/g, '_')}.pdf`);
+        
+        Swal.fire({
+          title: 'Sucesso!',
+          text: 'PDF gerado com sucesso!',
+          icon: 'success',
+          confirmButtonColor: 'var(--primary)'
+        });
+      } else {
+        Swal.fire({
+          title: 'Sem resultados',
+          text: 'A query não retornou nenhum resultado para gerar o PDF.',
+          icon: 'info',
+          confirmButtonColor: 'var(--primary)'
+        });
+      }
+    } catch (error: any) {
+      Swal.fire({
+        title: 'Erro',
+        text: error.response?.data?.error || 'Erro ao gerar o PDF.',
+        icon: 'error',
+        confirmButtonColor: 'var(--primary)'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleActionClick = (action: 'delete' | 'download', report: any) => {
+    const config = {
+      delete: {
+        title: 'Confirmar Exclusão',
+        message: `Tem certeza que deseja excluir o relatório "${report.nome}"?`,
+        onConfirm: () => handleDelete(report),
+        confirmButtonText: 'Excluir',
+        confirmButtonVariant: 'danger'
+      },
+      download: {
+        title: 'Confirmar Download',
+        message: `Deseja baixar o relatório "${report.nome}" em PDF?`,
+        onConfirm: () => handleDownloadPDF(report),
+        confirmButtonText: 'Baixar',
+        confirmButtonVariant: 'primary'
+      }
+    };
+
+    setModalConfig({
+      isOpen: true,
+      ...config[action]
+    });
+  };
+
+  const closeModal = () => {
+    setModalConfig(prev => ({ ...prev, isOpen: false }));
+  };
+
   const renderContent = () => {
     if (showResults) {
       return (
@@ -196,6 +333,18 @@ export const Home = () => {
           data={formatTableData(filteredReports)}
           columns={columns}
           onRowClick={handleRowClick}
+          actions={[
+            {
+              icon: <FiPrinter />,
+              onClick: (row) => handleActionClick('download', row),
+              title: 'Baixar PDF'
+            },
+            {
+              icon: <FiTrash />,
+              onClick: (row) => handleActionClick('delete', row),
+              title: 'Excluir'
+            }
+          ]}
         />
       </div>
     );
@@ -234,6 +383,19 @@ export const Home = () => {
         )}
 
         {renderContent()}
+
+        <ConfirmationModal
+          isOpen={modalConfig.isOpen}
+          onClose={closeModal}
+          onConfirm={() => {
+            modalConfig.onConfirm();
+            closeModal();
+          }}
+          title={modalConfig.title}
+          message={modalConfig.message}
+          confirmButtonText={modalConfig.confirmButtonText}
+          confirmButtonVariant={modalConfig.confirmButtonVariant}
+        />
       </div>
     </div>
   );
