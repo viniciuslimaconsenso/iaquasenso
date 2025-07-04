@@ -48,7 +48,7 @@ export function ReportsProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const filtered = reports.filter(report => report.tipo.tipo === selectedType);
+    const filtered = reports.filter(report => report.tipoRelatorio?.tipo === selectedType);
     console.log('Relatórios filtrados:', filtered);
     setFilteredReports(filtered);
   }, [selectedType, reports]);

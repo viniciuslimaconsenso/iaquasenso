@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header/Header';
 import { Select } from '../components/Select/Select';
 import { Table } from '../components/Table/Table';
 import { Button } from '../components/Button/Button';
-import { FiAlertCircle, FiDownload, FiTrash, FiPrinter } from 'react-icons/fi';
+import { FiAlertCircle, FiDownload, FiTrash, FiPrinter, FiFile } from 'react-icons/fi';
 import { FaBroom } from 'react-icons/fa';
 import { useReports } from '../contexts/ReportsContext';
 import { api } from '../services/api';
 import { ConfirmationModal } from '../components/ConfirmationModal/ConfirmationModal';
+import { DuplicateReportModal } from '../components/DuplicateReportModal/DuplicateReportModal';
+import { ExportModal } from '../components/ExportModal/ExportModal';
 import Swal from 'sweetalert2';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -26,11 +29,15 @@ const columns = [
 ];
 
 export const Home = () => {
+  const navigate = useNavigate();
   const { filteredReports, selectedType, setSelectedType, reloadReports } = useReports();
   const [showResults, setShowResults] = useState(false);
   const [queryResults, setQueryResults] = useState<any[]>([]);
   const [resultColumns, setResultColumns] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+  const [selectedReport, setSelectedReport] = useState<any>(null);
   const [modalConfig, setModalConfig] = useState<{
     isOpen: boolean;
     title: string;
@@ -112,9 +119,98 @@ export const Home = () => {
     }
   };
 
+  const handleExportCSV = () => {
+    try {
+      // Preparar cabeçalhos e dados
+      const headers = resultColumns.map(col => col.header);
+      const data = queryResults.map(row => 
+        resultColumns.map(col => row[col.key]?.toString() || '')
+      );
+      
+      // Criar conteúdo CSV
+      const csvContent = [
+        headers.join(','),
+        ...data.map(row => row.join(','))
+      ].join('\n');
+      
+      // Criar e baixar o arquivo
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'relatorio.csv';
+      link.click();
+      
+      Swal.fire({
+        title: 'Sucesso!',
+        text: 'CSV gerado com sucesso!',
+        icon: 'success',
+        confirmButtonColor: 'var(--primary)'
+      });
+    } catch (error) {
+      Swal.fire({
+        title: 'Erro',
+        text: 'Erro ao gerar o CSV.',
+        icon: 'error',
+        confirmButtonColor: 'var(--primary)'
+      });
+    }
+  };
+
+  const handleExportTXT = () => {
+    try {
+      // Preparar cabeçalhos e dados
+      const headers = resultColumns.map(col => col.header);
+      const data = queryResults.map(row => 
+        resultColumns.map(col => row[col.key]?.toString() || '')
+      );
+      
+      // Criar conteúdo TXT
+      const txtContent = [
+        headers.join('\t'),
+        ...data.map(row => row.join('\t'))
+      ].join('\n');
+      
+      // Criar e baixar o arquivo
+      const blob = new Blob([txtContent], { type: 'text/plain;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'relatorio.txt';
+      link.click();
+      
+      Swal.fire({
+        title: 'Sucesso!',
+        text: 'TXT gerado com sucesso!',
+        icon: 'success',
+        confirmButtonColor: 'var(--primary)'
+      });
+    } catch (error) {
+      Swal.fire({
+        title: 'Erro',
+        text: 'Erro ao gerar o TXT.',
+        icon: 'error',
+        confirmButtonColor: 'var(--primary)'
+      });
+    }
+  };
+
+  const handleExport = (format: 'pdf' | 'csv' | 'txt') => {
+    switch (format) {
+      case 'pdf':
+        handleExportPDF();
+        break;
+      case 'csv':
+        handleExportCSV();
+        break;
+      case 'txt':
+        handleExportTXT();
+        break;
+    }
+  };
+
   const handleRowClick = async (report: any) => {
     try {
       setIsLoading(true);
+      setSelectedReport(report);
       const response = await api.post('/query/execute', {
         query: report.query
       });
@@ -152,7 +248,7 @@ export const Home = () => {
   const formatTableData = (data: any[]) => {
     return data.map(item => ({
       ...item,
-      tipo: item.tipo.tipo // Extraindo apenas o nome do tipo
+      tipo: item.tipoRelatorio.tipo // Extraindo o tipo do tipoRelatorio
     }));
   };
 
@@ -251,6 +347,43 @@ export const Home = () => {
     }
   };
 
+  const handlePrintClick = async (report: any) => {
+    try {
+      setIsLoading(true);
+      const response = await api.post('/query/execute', {
+        query: report.query
+      });
+
+      if (response.data && response.data.length > 0) {
+        // Extrair as colunas do primeiro resultado
+        const columns = Object.keys(response.data[0]).map(key => ({
+          key,
+          header: key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ')
+        }));
+
+        setResultColumns(columns);
+        setQueryResults(response.data);
+        setShowExportModal(true);
+      } else {
+        Swal.fire({
+          title: 'Sem resultados',
+          text: 'A query não retornou nenhum resultado.',
+          icon: 'info',
+          confirmButtonColor: 'var(--primary)'
+        });
+      }
+    } catch (error: any) {
+      Swal.fire({
+        title: 'Erro',
+        text: error.response?.data?.error || 'Erro ao executar a query.',
+        icon: 'error',
+        confirmButtonColor: 'var(--primary)'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleActionClick = (action: 'delete' | 'download', report: any) => {
     const config = {
       delete: {
@@ -279,23 +412,52 @@ export const Home = () => {
     setModalConfig(prev => ({ ...prev, isOpen: false }));
   };
 
+  const handleDuplicateClick = (report: any) => {
+    if (!report) {
+      Swal.fire({
+        title: 'Erro',
+        text: 'Por favor, selecione um relatório primeiro.',
+        icon: 'error',
+        confirmButtonColor: 'var(--primary)'
+      });
+      return;
+    }
+    setSelectedReport(report);
+    setShowDuplicateModal(true);
+  };
+
   const renderContent = () => {
     if (showResults) {
       return (
         <div className="results-container">
           <div className="d-flex justify-content-between align-items-center mb-4">
-            <h3 className="results-title">Resultados da Query</h3>
+            <div>
+              <h3 className="results-title">Resultados da Query</h3>
+            </div>
             <div className="d-flex gap-2">
               <Button
                 variant="outline-custom"
-                onClick={handleExportPDF}
-                icon={<FiDownload />}
+                onClick={() => handleDuplicateClick(selectedReport)}
+                icon={<FiFile />}
+                style={{ width: '212px', height: '40px', borderRadius: '4px', border: '1px solid #404d65' }}
               >
-                Exportar para PDF
+                Atualizar relatório
               </Button>
               <Button
                 variant="outline-custom"
-                onClick={() => setShowResults(false)}
+                onClick={() => setShowExportModal(true)}
+                icon={<FiDownload />}
+                style={{ width: '200px' }}
+              >
+                Exportar Relatório
+              </Button>
+              <Button
+                variant="outline-custom"
+                onClick={() => {
+                  setShowResults(false);
+                  setSelectedReport(null);
+                }}
+                style={{ width: '200px' }}
               >
                 Voltar para Relatórios
               </Button>
@@ -334,11 +496,12 @@ export const Home = () => {
           columns={columns}
           onRowClick={handleRowClick}
           actions={[
-            {
+            ...(filteredReports.some(report => !report.has_parameters) ? [{
               icon: <FiPrinter />,
-              onClick: (row) => handleActionClick('download', row),
-              title: 'Baixar PDF'
-            },
+              onClick: (row) => handlePrintClick(row),
+              title: 'Exportar relatório',
+              show: (row) => !row.has_parameters
+            }] : []),
             {
               icon: <FiTrash />,
               onClick: (row) => handleActionClick('delete', row),
@@ -395,6 +558,22 @@ export const Home = () => {
           message={modalConfig.message}
           confirmButtonText={modalConfig.confirmButtonText}
           confirmButtonVariant={modalConfig.confirmButtonVariant}
+        />
+
+        <DuplicateReportModal
+          show={showDuplicateModal}
+          onHide={() => setShowDuplicateModal(false)}
+          report={selectedReport}
+          onSuccess={() => {
+            setShowDuplicateModal(false);
+            reloadReports();
+          }}
+        />
+
+        <ExportModal
+          show={showExportModal}
+          onHide={() => setShowExportModal(false)}
+          onExport={handleExport}
         />
       </div>
     </div>

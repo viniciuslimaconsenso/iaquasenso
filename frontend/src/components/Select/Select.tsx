@@ -1,4 +1,4 @@
-import type { SelectHTMLAttributes } from 'react';
+import type { SelectHTMLAttributes, ReactNode } from 'react';
 import './Select.css';
 
 interface Option {
@@ -9,19 +9,26 @@ interface Option {
 interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   options: Option[];
   label?: string;
+  labelExtra?: ReactNode;
   error?: string;
 }
 
 export const Select = ({ 
   options, 
   label,
+  labelExtra,
   error,
   className = '',
   ...props 
 }: SelectProps) => {
   return (
     <div className="select-container">
-      {label && <label className="form-label">{label}</label>}
+      {label && (
+        <label className="form-label">
+          {label}
+          {labelExtra}
+        </label>
+      )}
       <select 
         className={`form-select ${error ? 'is-invalid' : ''} ${className}`}
         {...props}

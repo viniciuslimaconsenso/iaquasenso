@@ -215,4 +215,70 @@
 .register-form textarea:focus:not(:focus-visible),
 .register-form .form-select:focus:not(:focus-visible) {
   outline: none !important;
+}
+
+.input-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  width: 100%;
+}
+
+.input-group {
+  flex: 1;
+  min-width: 0;
+}
+
+.parameters-section {
+  margin-top: 1rem;
+}
+
+.parameters-header {
+  margin-bottom: 1rem;
+}
+
+.parameters-label {
+  font-weight: 500;
+  color: var(--title);
+  font-size: 0.875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.radio-group {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: normal;
+  cursor: pointer;
+}
+
+.radio-label input[type="radio"] {
+  margin: 0;
+  cursor: pointer;
+}
+
+.required-asterisk {
+  color: red;
+  margin-left: 4px;
+}
+
+.new-report-button {
+  width: 212px;
+  height: 40px;
+  border-radius: 4px;
+  border: 1px solid #404d65;
+  color: #404d65;
+  background-color: transparent;
+  transition: background-color 0.2s ease;
+}
+
+.new-report-button:hover {
+  background-color: #e6e8ec;
 } 

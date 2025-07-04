@@ -7,12 +7,16 @@ export const api = axios.create({
 export interface Relatorio {
   id: number;
   nome: string;
-  descricao: string;
-  tipo: {
+  descricao: string | null;
+  tipoRelatorioId: number;
+  tipoRelatorio: {
+    id: number;
     tipo: string;
   };
-  created_at: string;
-  updated_at: string;
+  query: string | null;
+  hasParameters: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export const getRelatorios = async (): Promise<Relatorio[]> => {

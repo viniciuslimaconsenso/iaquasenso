@@ -1,0 +1,62 @@
+.export-modal .modal-dialog {
+  max-width: 600px;
+}
+
+.export-format-selection {
+  padding: 10px 0;
+}
+
+.format-question {
+  font-size: 16px;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.radio-options {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.radio-label {
+  cursor: pointer;
+  padding: 10px;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+  flex: 1;
+}
+
+.radio-label:hover {
+  background-color: #f8f9fa;
+}
+
+.radio-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.radio-label input[type="radio"] {
+  margin: 0;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.format-icon {
+  color: #3377F1;
+  width: 20px;
+  height: 20px;
+}
+
+.radio-label span {
+  font-size: 14px;
+  color: #333;
+  white-space: nowrap;
+}
+
+.radio-label.selected {
+  background-color: #e9ecef;
+} 

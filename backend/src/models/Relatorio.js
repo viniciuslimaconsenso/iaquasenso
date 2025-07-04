@@ -15,6 +15,11 @@ class Relatorio extends Model {
         type: DataTypes.TEXT,
         allowNull: true,
       },
+      has_parameters: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      },
     }, {
       sequelize,
       tableName: 'relatorios',
@@ -23,6 +28,7 @@ class Relatorio extends Model {
 
   static associate(models) {
     this.belongsTo(models.TipoRelatorio, { foreignKey: 'tipo_relatorio_id', as: 'tipo' });
+    this.hasMany(models.Parametro, { foreignKey: 'relatorio_id', as: 'parametros' });
   }
 }
 

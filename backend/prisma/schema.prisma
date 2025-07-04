@@ -1,0 +1,104 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model TipoRelatorio {
+  id         Int         @id @default(autoincrement())
+  tipo       String      @unique
+  relatorios Relatorio[]
+  createdAt  DateTime    @default(now()) @map("created_at")
+  updatedAt  DateTime    @updatedAt @map("updated_at")
+
+  @@map("tipos_relatorio")
+}
+
+model Relatorio {
+  id              Int           @id @default(autoincrement())
+  nome            String
+  descricao       String?
+  tipoRelatorioId Int           @map("tipo_relatorio_id")
+  tipoRelatorio   TipoRelatorio @relation(fields: [tipoRelatorioId], references: [id])
+  query           String?
+  hasParameters   Boolean       @default(false) @map("has_parameters")
+  parametros      Parametro[]
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  @@map("relatorios")
+}
+
+model Parametro {
+  id          Int       @id @default(autoincrement())
+  nome        String
+  tipo        String
+  tamanho     String
+  label       String
+  relatorioId Int       @map("relatorio_id")
+  relatorio   Relatorio @relation(fields: [relatorioId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@map("parametros")
+}
+
+model Cliente {
+  id        Int      @id @default(autoincrement())
+  nome      String   @db.VarChar(100)
+  email     String   @unique @db.VarChar(100)
+  telefone  String?  @db.VarChar(20)
+  vendas    Venda[]
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("clientes")
+}
+
+model Produto {
+  id         Int         @id @default(autoincrement())
+  nome       String      @db.VarChar(100)
+  preco      Decimal     @db.Decimal(10, 2)
+  estoque    Int         @default(0)
+  vendaItens VendaItem[]
+  createdAt  DateTime    @default(now()) @map("created_at")
+  updatedAt  DateTime    @updatedAt @map("updated_at")
+
+  @@map("produtos")
+}
+
+model Venda {
+  id         Int         @id @default(autoincrement())
+  clienteId  Int         @map("cliente_id")
+  cliente    Cliente     @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  dataVenda  DateTime    @default(now()) @map("data_venda")
+  vendaItens VendaItem[]
+  createdAt  DateTime    @default(now()) @map("created_at")
+  updatedAt  DateTime    @updatedAt @map("updated_at")
+
+  @@map("vendas")
+}
+
+model VendaItem {
+  id            Int      @id @default(autoincrement())
+  vendaId       Int      @map("venda_id")
+  venda         Venda    @relation(fields: [vendaId], references: [id], onDelete: Cascade)
+  produtoId     Int      @map("produto_id")
+  produto       Produto  @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+  quantidade    Int
+  precoUnitario Decimal  @map("preco_unitario") @db.Decimal(10, 2)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("venda_itens")
+}

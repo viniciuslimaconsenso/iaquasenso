@@ -3,7 +3,7 @@ import connection from '../database/index.js';
 class QueryController {
   async execute(req, res) {
     try {
-      const { query } = req.body;
+      const { query, parameters } = req.body;
 
       if (!query) {
         return res.status(400).json({ error: 'Query não fornecida' });
@@ -55,9 +55,38 @@ class QueryController {
         });
       }
 
-      // Executar a query
-      const result = await connection.query(query, {
+      // Se houver parâmetros, validar e preparar
+      let finalQuery = query;
+      let queryParams = [];
+
+      if (parameters && Object.keys(parameters).length > 0) {
+        // Validar os parâmetros
+        for (const [key, value] of Object.entries(parameters)) {
+          if (value === undefined || value === null || value === '') {
+            return res.status(400).json({
+              error: `Parâmetro ${key} é obrigatório`
+            });
+          }
+          
+          // Verificar se o parâmetro existe na query
+          if (!query.includes(`:${key}`)) {
+            return res.status(400).json({
+              error: `Parâmetro ${key} não encontrado na query`
+            });
+          }
+        }
+
+        // Substituir os parâmetros na query usando prepared statements
+        Object.entries(parameters).forEach(([key, value]) => {
+          finalQuery = finalQuery.replace(`:${key}`, '?');
+          queryParams.push(value);
+        });
+      }
+
+      // Executar a query com os parâmetros
+      const result = await connection.query(finalQuery, {
         type: connection.QueryTypes.SELECT,
+        replacements: queryParams,
         raw: true,
       });
 
@@ -76,42 +105,55 @@ class QueryController {
   async examples(req, res) {
     try {
       const examples = {
-        "Resumo de Vendas por Cliente": `
-          SELECT 
-            c.nome as cliente,
-            COUNT(v.id) as total_vendas,
-            SUM(vi.quantidade * vi.preco_unitario) as valor_total
-          FROM clientes c
-          LEFT JOIN vendas v ON v.cliente_id = c.id
-          LEFT JOIN venda_itens vi ON vi.venda_id = v.id
-          GROUP BY c.id, c.nome
-          ORDER BY valor_total DESC
-        `,
-        "Produtos Mais Vendidos": `
-          SELECT 
-            p.nome as produto,
-            SUM(vi.quantidade) as quantidade_vendida,
-            p.estoque as estoque_atual
-          FROM produtos p
-          LEFT JOIN venda_itens vi ON vi.produto_id = p.id
-          GROUP BY p.id, p.nome, p.estoque
-          ORDER BY quantidade_vendida DESC
-        `,
-        "Vendas do Dia": `
-          SELECT 
-            v.id as venda_id,
-            c.nome as cliente,
-            p.nome as produto,
-            vi.quantidade,
-            vi.preco_unitario,
-            (vi.quantidade * vi.preco_unitario) as total
-          FROM vendas v
-          JOIN clientes c ON c.id = v.cliente_id
-          JOIN venda_itens vi ON vi.venda_id = v.id
-          JOIN produtos p ON p.id = vi.produto_id
-          WHERE DATE(v.data_venda) = CURRENT_DATE
-          ORDER BY v.data_venda DESC
-        `
+        "Vendas por Período": {
+          query: `
+            SELECT 
+              c.nome as cliente,
+              COUNT(v.id) as total_vendas,
+              SUM(vi.quantidade * vi.preco_unitario) as valor_total
+            FROM clientes c
+            LEFT JOIN vendas v ON v.cliente_id = c.id
+            LEFT JOIN venda_itens vi ON vi.venda_id = v.id
+            WHERE v.data_venda BETWEEN :data_inicio AND :data_fim
+            GROUP BY c.id, c.nome
+            ORDER BY valor_total DESC
+          `,
+          parameters: [
+            {
+              nome: "data_inicio",
+              tipo: "date",
+              tamanho: "10",
+              label: "Data Inicial"
+            },
+            {
+              nome: "data_fim",
+              tipo: "date",
+              tamanho: "10",
+              label: "Data Final"
+            }
+          ]
+        },
+        "Vendas por Produto": {
+          query: `
+            SELECT 
+              p.nome as produto,
+              SUM(vi.quantidade) as quantidade_vendida,
+              SUM(vi.quantidade * vi.preco_unitario) as valor_total
+            FROM produtos p
+            LEFT JOIN venda_itens vi ON vi.produto_id = p.id
+            LEFT JOIN vendas v ON v.id = vi.venda_id
+            WHERE p.id = :produto_id
+            GROUP BY p.id, p.nome
+          `,
+          parameters: [
+            {
+              nome: "produto_id",
+              tipo: "number",
+              tamanho: "10",
+              label: "Produto"
+            }
+          ]
+        }
       };
 
       return res.json(examples);

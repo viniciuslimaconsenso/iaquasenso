@@ -4,6 +4,7 @@ import Cliente from './Cliente.js';
 import Produto from './Produto.js';
 import Venda from './Venda.js';
 import VendaItem from './VendaItem.js';
+import Parametro from './Parametro.js';
 
 export { 
     Relatorio, 
@@ -11,5 +12,6 @@ export {
     Cliente,
     Produto,
     Venda,
-    VendaItem
+    VendaItem,
+    Parametro
 }; 

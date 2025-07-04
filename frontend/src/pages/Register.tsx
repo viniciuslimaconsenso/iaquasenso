@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header/Header';
 import { Input } from '../components/Input/Input';
 import { Select } from '../components/Select/Select';
 import { TextArea } from '../components/TextArea/TextArea';
 import { Button } from '../components/Button/Button';
+import { ParameterForm } from '../components/ParameterForm/ParameterForm';
+import { ParametersTable } from '../components/ParametersTable/ParametersTable';
 import { api } from '../services/api';
 import Swal from 'sweetalert2';
 import './styles.css';
@@ -12,6 +14,13 @@ import './styles.css';
 interface TipoRelatorio {
   id: number;
   tipo: string;
+}
+
+interface Parameter {
+  nome: string;
+  tipo: string;
+  tamanho: string;
+  label: string;
 }
 
 // Lista de palavras proibidas
@@ -41,12 +50,20 @@ export const Register = () => {
   const [query, setQuery] = useState('');
   const [tipoRelatorioId, setTipoRelatorioId] = useState('');
   const [tiposRelatorio, setTiposRelatorio] = useState<TipoRelatorio[]>([]);
+  const [hasParameters, setHasParameters] = useState(false);
+  const [parameters, setParameters] = useState<Parameter[]>([]);
   const [errors, setErrors] = useState({
     nome: '',
     descricao: '',
     query: '',
     tipoRelatorioId: ''
   });
+
+  // Refs para os campos do formulário
+  const nomeRef = useRef<HTMLDivElement>(null);
+  const descricaoRef = useRef<HTMLDivElement>(null);
+  const queryRef = useRef<HTMLDivElement>(null);
+  const tipoRelatorioRef = useRef<HTMLDivElement>(null);
 
   // Função para verificar palavras proibidas
   const checkProhibitedWords = (value: string) => {
@@ -77,7 +94,7 @@ export const Register = () => {
     }
   };
 
-  const handleDescricaoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDescricaoChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
     setDescricao(value);
     if (value.trim() === '') {
@@ -95,6 +112,14 @@ export const Register = () => {
     } else {
       setErrors(prev => ({ ...prev, tipoRelatorioId: '' }));
     }
+  };
+
+  const handleAddParameter = (parameter: Parameter) => {
+    setParameters([...parameters, parameter]);
+  };
+
+  const handleDeleteParameter = (index: number) => {
+    setParameters(parameters.filter((_, i) => i !== index));
   };
 
   useEffect(() => {
@@ -119,7 +144,16 @@ export const Register = () => {
     };
 
     setErrors(newErrors);
-    return !Object.values(newErrors).some(error => error !== '');
+    
+    // Se houver erros, faz o scroll para o primeiro campo com erro
+    if (Object.values(newErrors).some(error => error !== '')) {
+      setTimeout(() => {
+        scrollToFirstError(newErrors);
+      }, 100);
+      return false;
+    }
+    
+    return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -134,7 +168,9 @@ export const Register = () => {
         nome,
         descricao,
         query,
-        tipo_relatorio_id: Number(tipoRelatorioId)
+        tipo_relatorio_id: Number(tipoRelatorioId),
+        has_parameters: hasParameters,
+        parameters: hasParameters ? parameters : []
       });
 
       const result = await Swal.fire({
@@ -158,6 +194,8 @@ export const Register = () => {
         setDescricao('');
         setQuery('');
         setTipoRelatorioId('');
+        setHasParameters(false);
+        setParameters([]);
         setErrors({
           nome: '',
           descricao: '',
@@ -175,7 +213,33 @@ export const Register = () => {
         text: 'Ocorreu um erro ao cadastrar o relatório.',
         icon: 'error',
         confirmButtonColor: 'var(--primary)'
+      }).then(() => {
+        // Chama o scroll para o primeiro erro após o modal ser fechado
+        scrollToFirstError(errors);
       });
+    }
+  };
+
+  // Função para fazer scroll para o primeiro erro
+  const scrollToFirstError = (errors: Record<string, string>) => {
+    const errorFields = {
+      nome: nomeRef,
+      descricao: descricaoRef,
+      query: queryRef,
+      tipoRelatorioId: tipoRelatorioRef
+    };
+
+    // Encontra o primeiro campo com erro
+    const firstErrorField = Object.entries(errors).find(([_, value]) => value !== '');
+    
+    if (firstErrorField) {
+      const [fieldName] = firstErrorField;
+      const ref = errorFields[fieldName as keyof typeof errorFields];
+      
+      if (ref.current) {
+        // Scroll suave para o elemento com erro
+        ref.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
     }
   };
 
@@ -190,29 +254,44 @@ export const Register = () => {
           />
           
           <form onSubmit={handleSubmit} className="register-form">
-            <Input
-              label="Nome"
-              value={nome}
-              onChange={handleNomeChange}
-              placeholder="Digite o nome do relatório"
-              error={errors.nome}
-            />
+            <div className="input-row">
+              <div className="input-group" ref={nomeRef}>
+                <Input
+                  label={"Nome"}
+                  labelExtra={<span className="required-asterisk">*</span>}
+                  value={nome}
+                  onChange={handleNomeChange}
+                  placeholder="Digite o nome do relatório"
+                  error={errors.nome}
+                />
+              </div>
+              <div className="input-group" ref={tipoRelatorioRef}>
+                <Select
+                  label={"Tipo do Relatório"}
+                  labelExtra={<span className="required-asterisk">*</span>}
+                  value={tipoRelatorioId}
+                  onChange={handleTipoRelatorioChange}
+                  options={tiposRelatorio.map(tipo => ({
+                    value: tipo.id.toString(),
+                    label: tipo.tipo
+                  }))}
+                  error={errors.tipoRelatorioId}
+                />
+              </div>
+            </div>
 
-            <Input
-              label="Descrição"
-              value={descricao}
-              onChange={handleDescricaoChange}
-              placeholder="Digite a descrição do relatório"
-              error={errors.descricao}
-            />
-
-            <TextArea
-              label="Query"
-              value={query}
-              onChange={handleQueryChange}
-              placeholder="Digite a query SQL do relatório"
-              error={errors.query}
-            />
+            <div ref={queryRef}>
+              <TextArea
+                label={"Query"}
+                labelExtra={<span className="required-asterisk">*</span>}
+                value={query}
+                onChange={handleQueryChange}
+                placeholder="Digite a query SQL do relatório"
+                error={errors.query}
+                maxLength={2000}
+                showCounter
+              />
+            </div>
 
             <div className="available-tables">
               <div className="available-tables-title">Tabelas disponíveis para consulta</div>
@@ -224,16 +303,59 @@ export const Register = () => {
               </div>
             </div>
 
-            <Select
-              label="Tipo do Relatório"
-              value={tipoRelatorioId}
-              onChange={handleTipoRelatorioChange}
-              options={tiposRelatorio.map(tipo => ({
-                value: tipo.id.toString(),
-                label: tipo.tipo
-              }))}
-              error={errors.tipoRelatorioId}
-            />
+            <div ref={descricaoRef}>
+              <TextArea
+                label={"Descrição"}
+                labelExtra={<span className="required-asterisk">*</span>}
+                value={descricao}
+                onChange={handleDescricaoChange}
+                placeholder="Digite a descrição do relatório"
+                error={errors.descricao}
+                maxLength={400}
+                showCounter
+                style={{ minHeight: '80px' }}
+              />
+            </div>
+
+            <div className="parameters-section">
+              <div className="parameters-header">
+                <label className="parameters-label">
+                  A query tem parâmetros?
+                  <div className="radio-group">
+                    <label className="radio-label">
+                      <input
+                        type="radio"
+                        name="hasParameters"
+                        value="yes"
+                        checked={hasParameters}
+                        onChange={() => setHasParameters(true)}
+                      />
+                      Sim
+                    </label>
+                    <label className="radio-label">
+                      <input
+                        type="radio"
+                        name="hasParameters"
+                        value="no"
+                        checked={!hasParameters}
+                        onChange={() => setHasParameters(false)}
+                      />
+                      Não
+                    </label>
+                  </div>
+                </label>
+              </div>
+
+              {hasParameters && (
+                <>
+                  <ParameterForm onAddParameter={handleAddParameter} />
+                  <ParametersTable
+                    parameters={parameters}
+                    onDeleteParameter={handleDeleteParameter}
+                  />
+                </>
+              )}
+            </div>
 
             <div className="form-actions">
               <Button
