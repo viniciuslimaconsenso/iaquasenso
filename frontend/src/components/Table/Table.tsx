@@ -27,6 +27,18 @@ type SortConfig = {
   direction: 'asc' | 'desc';
 } | null;
 
+// Função para acessar propriedades aninhadas com segurança
+const getNestedValue = (obj: any, path: string): any => {
+  const value = path.split('.').reduce((acc, part) => (acc && acc[part] !== undefined ? acc[part] : ''), obj);
+  
+  // Se o valor for um objeto vazio ou undefined/null, retorna uma string vazia
+  if (value === null || value === undefined || (typeof value === 'object' && Object.keys(value).length === 0)) {
+    return '';
+  }
+  
+  return value;
+};
+
 export const Table: React.FC<TableProps> = ({ 
   data, 
   columns, 
@@ -43,8 +55,8 @@ export const Table: React.FC<TableProps> = ({
     if (!sortConfig) return data;
 
     return [...data].sort((a, b) => {
-      const aValue = a[sortConfig.key];
-      const bValue = b[sortConfig.key];
+      const aValue = getNestedValue(a, sortConfig.key);
+      const bValue = getNestedValue(b, sortConfig.key);
 
       if (aValue === null || aValue === undefined) return 1;
       if (bValue === null || bValue === undefined) return -1;
@@ -194,7 +206,6 @@ export const Table: React.FC<TableProps> = ({
               <tr 
                 key={index} 
                 onClick={(e) => {
-                  // Prevent row click when clicking action buttons
                   if ((e.target as HTMLElement).closest('.action-button')) {
                     e.stopPropagation();
                     return;
@@ -204,7 +215,9 @@ export const Table: React.FC<TableProps> = ({
                 className={`${onRowClick ? 'clickable-row' : ''} table-row`}
               >
                 {columns.map((column) => (
-                  <td key={`${index}-${column.key}`}>{row[column.key]}</td>
+                  <td key={`${index}-${column.key}`}>
+                    {getNestedValue(row, column.key)}
+                  </td>
                 ))}
                 {actions && actions.length > 0 && (
                   <td className="actions-cell">

@@ -8,6 +8,7 @@ import { FiAlertCircle, FiDownload, FiTrash, FiPrinter, FiFile } from 'react-ico
 import { FaBroom } from 'react-icons/fa';
 import { useReports } from '../contexts/ReportsContext';
 import { api } from '../services/api';
+import type { Relatorio } from '../services/api';
 import { ConfirmationModal } from '../components/ConfirmationModal/ConfirmationModal';
 import { DuplicateReportModal } from '../components/DuplicateReportModal/DuplicateReportModal';
 import { ExportModal } from '../components/ExportModal/ExportModal';
@@ -18,14 +19,14 @@ import './styles.css';
 
 const reportTypes = [
   { value: 'Gerencial', label: 'Gerencial' },
-  { value: 'Operacional', label: 'Operacional' },
   { value: 'Financeiro', label: 'Financeiro' },
+  { value: 'Operacional', label: 'Operacional' },
 ];
 
 const columns = [
   { key: 'nome', header: 'Nome' },
   { key: 'descricao', header: 'Descrição' },
-  { key: 'tipo', header: 'Tipo do Relatório' },
+  { key: 'tipoRelatorio.tipo', header: 'Tipo do Relatório' },
 ];
 
 export const Home = () => {
@@ -245,11 +246,17 @@ export const Home = () => {
     }
   };
 
-  const formatTableData = (data: any[]) => {
-    return data.map(item => ({
-      ...item,
-      tipo: item.tipoRelatorio.tipo // Extraindo o tipo do tipoRelatorio
-    }));
+  const formatTableData = (data: Relatorio[]) => {
+    return data.map(row => {
+      const formattedRow = { ...row };
+      
+      // Garantir que tipoRelatorio.tipo existe
+      if (!formattedRow.tipoRelatorio || !formattedRow.tipoRelatorio.tipo) {
+        formattedRow.tipoRelatorio = { id: 0, tipo: '' };
+      }
+      
+      return formattedRow;
+    });
   };
 
   const handleDelete = async (report: any) => {
@@ -496,12 +503,11 @@ export const Home = () => {
           columns={columns}
           onRowClick={handleRowClick}
           actions={[
-            ...(filteredReports.some(report => !report.has_parameters) ? [{
+            {
               icon: <FiPrinter />,
               onClick: (row) => handlePrintClick(row),
-              title: 'Exportar relatório',
-              show: (row) => !row.has_parameters
-            }] : []),
+              title: 'Exportar relatório'
+            },
             {
               icon: <FiTrash />,
               onClick: (row) => handleActionClick('delete', row),

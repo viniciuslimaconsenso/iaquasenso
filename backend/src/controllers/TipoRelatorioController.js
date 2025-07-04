@@ -1,10 +1,12 @@
-import TipoRelatorio from '../models/TipoRelatorio.js';
+import prisma from '../lib/prisma.js';
 
 class TipoRelatorioController {
   async index(req, res) {
     try {
-      const tiposRelatorio = await TipoRelatorio.findAll({
-        order: [['tipo', 'ASC']]
+      const tiposRelatorio = await prisma.tipoRelatorio.findMany({
+        orderBy: {
+          tipo: 'asc'
+        }
       });
       
       return res.json(tiposRelatorio);

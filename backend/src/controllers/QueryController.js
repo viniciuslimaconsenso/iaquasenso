@@ -1,4 +1,28 @@
-import connection from '../database/index.js';
+import { PrismaClient } from '../generated/prisma/index.js';
+const prisma = new PrismaClient();
+
+// Função para converter BigInt para Number em objetos
+const convertBigIntToNumber = (data) => {
+  if (data === null || data === undefined) return data;
+  
+  if (typeof data === 'bigint') {
+    return Number(data);
+  }
+  
+  if (Array.isArray(data)) {
+    return data.map(convertBigIntToNumber);
+  }
+  
+  if (typeof data === 'object') {
+    const converted = {};
+    for (const key in data) {
+      converted[key] = convertBigIntToNumber(data[key]);
+    }
+    return converted;
+  }
+  
+  return data;
+};
 
 class QueryController {
   async execute(req, res) {
@@ -57,7 +81,7 @@ class QueryController {
 
       // Se houver parâmetros, validar e preparar
       let finalQuery = query;
-      let queryParams = [];
+      let queryParams = {};
 
       if (parameters && Object.keys(parameters).length > 0) {
         // Validar os parâmetros
@@ -74,23 +98,19 @@ class QueryController {
               error: `Parâmetro ${key} não encontrado na query`
             });
           }
-        }
 
-        // Substituir os parâmetros na query usando prepared statements
-        Object.entries(parameters).forEach(([key, value]) => {
-          finalQuery = finalQuery.replace(`:${key}`, '?');
-          queryParams.push(value);
-        });
+          // Adicionar ao objeto de parâmetros
+          queryParams[key] = value;
+        }
       }
 
-      // Executar a query com os parâmetros
-      const result = await connection.query(finalQuery, {
-        type: connection.QueryTypes.SELECT,
-        replacements: queryParams,
-        raw: true,
-      });
+      // Executar a query usando Prisma
+      const result = await prisma.$queryRawUnsafe(finalQuery, ...Object.values(queryParams));
+      
+      // Converter BigInt para Number antes de enviar a resposta
+      const convertedResult = convertBigIntToNumber(result);
 
-      return res.json(result);
+      return res.json(convertedResult);
     } catch (error) {
       console.error('Erro ao executar query:', error);
       

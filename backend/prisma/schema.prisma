@@ -16,7 +16,7 @@ datasource db {
 
 model TipoRelatorio {
   id         Int         @id @default(autoincrement())
-  tipo       String      @unique
+  tipo       String      @unique // Valores: 'Gerencial', 'Financeiro', 'Operacional'
   relatorios Relatorio[]
   createdAt  DateTime    @default(now()) @map("created_at")
   updatedAt  DateTime    @updatedAt @map("updated_at")
@@ -67,7 +67,7 @@ model Cliente {
 
 model Produto {
   id         Int         @id @default(autoincrement())
-  nome       String      @db.VarChar(100)
+  nome       String      @unique @db.VarChar(100)
   preco      Decimal     @db.Decimal(10, 2)
   estoque    Int         @default(0)
   vendaItens VendaItem[]
