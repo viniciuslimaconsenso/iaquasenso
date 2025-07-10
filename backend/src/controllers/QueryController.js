@@ -29,6 +29,11 @@ class QueryController {
     try {
       const { query, parameters } = req.body;
 
+      console.log('Received request:', {
+        query,
+        parameters
+      });
+
       if (!query) {
         return res.status(400).json({ error: 'Query não fornecida' });
       }
@@ -81,11 +86,16 @@ class QueryController {
 
       // Se houver parâmetros, validar e preparar
       let finalQuery = query;
-      let queryParams = {};
+      const queryParams = [];
+      let paramCount = 1;
 
       if (parameters && Object.keys(parameters).length > 0) {
+        console.log('Processing parameters:', parameters);
+        
         // Validar os parâmetros
         for (const [key, value] of Object.entries(parameters)) {
+          console.log(`Processing parameter ${key}:`, value);
+          
           if (value === undefined || value === null || value === '') {
             return res.status(400).json({
               error: `Parâmetro ${key} é obrigatório`
@@ -93,30 +103,59 @@ class QueryController {
           }
           
           // Verificar se o parâmetro existe na query
-          if (!query.includes(`:${key}`)) {
+          const paramPlaceholder = `:${key}`;
+          if (!query.includes(paramPlaceholder)) {
             return res.status(400).json({
               error: `Parâmetro ${key} não encontrado na query`
             });
           }
 
-          // Adicionar ao objeto de parâmetros
-          queryParams[key] = value;
+          // Substituir o placeholder pelo formato $n do PostgreSQL
+          const regex = new RegExp(`:${key}\\b`, 'g');
+          console.log(`Replacing ${paramPlaceholder} with $${paramCount}`);
+          finalQuery = finalQuery.replace(regex, `$${paramCount}`);
+          paramCount++;
+          
+          // Converter o valor do parâmetro de acordo com seu tipo
+          let processedValue = value;
+          if (typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            // Se for uma data no formato YYYY-MM-DD, converte para objeto Date
+            processedValue = new Date(value);
+          } else if (typeof value === 'string' && !isNaN(value)) {
+            // Se for um número em formato string, converte para número
+            processedValue = Number(value);
+          }
+          
+          queryParams.push(processedValue);
+          console.log(`Added parameter value:`, processedValue);
         }
       }
 
+      console.log('Executing query:', {
+        finalQuery,
+        queryParams
+      });
+
       // Executar a query usando Prisma
-      const result = await prisma.$queryRawUnsafe(finalQuery, ...Object.values(queryParams));
+      const result = await prisma.$queryRawUnsafe(finalQuery, ...queryParams);
+      
+      console.log('Query result:', result);
       
       // Converter BigInt para Number antes de enviar a resposta
       const convertedResult = convertBigIntToNumber(result);
 
       return res.json(convertedResult);
     } catch (error) {
-      console.error('Erro ao executar query:', error);
+      console.error('Erro detalhado ao executar query:', {
+        message: error.message,
+        stack: error.stack,
+        code: error.code,
+        meta: error.meta
+      });
       
-      // Não expor detalhes do erro para o cliente
+      // Retornar mensagem de erro mais específica
       return res.status(500).json({ 
-        error: 'Erro ao executar a query. Verifique a sintaxe e tente novamente.' 
+        error: `Erro ao executar a query: ${error.message}` 
       });
     }
   }

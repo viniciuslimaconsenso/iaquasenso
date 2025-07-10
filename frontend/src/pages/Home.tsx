@@ -16,6 +16,8 @@ import Swal from 'sweetalert2';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import './styles.css';
+import { ParameterInputForm } from '../components/ParameterForm/ParameterInputForm';
+import { LoadingOverlay } from '../components/LoadingOverlay/LoadingOverlay';
 
 const reportTypes = [
   { value: 'Gerencial', label: 'Gerencial' },
@@ -52,6 +54,7 @@ export const Home = () => {
     message: '',
     onConfirm: () => {},
   });
+  const [showParameterForm, setShowParameterForm] = useState(false);
 
   // Recarrega os dados quando a página é montada
   useEffect(() => {
@@ -212,6 +215,15 @@ export const Home = () => {
     try {
       setIsLoading(true);
       setSelectedReport(report);
+
+      // Check if report has parameters
+      if (report.hasParameters && report.parametros && report.parametros.length > 0) {
+        // Show parameter form modal
+        setShowParameterForm(true);
+        setIsLoading(false);
+        return;
+      }
+
       const response = await api.post('/query/execute', {
         query: report.query
       });
@@ -433,6 +445,59 @@ export const Home = () => {
     setShowDuplicateModal(true);
   };
 
+  const handleParameterSubmit = async (parameters: any) => {
+    try {
+      setIsLoading(true);
+      setShowParameterForm(false);
+
+      if (!selectedReport) return;
+
+      console.log('Enviando query com parâmetros:', {
+        query: selectedReport.query,
+        parameters,
+        parametrosDefinidos: selectedReport.parametros
+      });
+
+      const response = await api.post('/query/execute', {
+        query: selectedReport.query,
+        parameters
+      });
+
+      if (response.data && response.data.length > 0) {
+        const columns = Object.keys(response.data[0]).map(key => ({
+          key,
+          header: key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ')
+        }));
+
+        setResultColumns(columns);
+        setQueryResults(response.data);
+        setShowResults(true);
+      } else {
+        Swal.fire({
+          title: 'Sem resultados',
+          text: 'A query não retornou nenhum resultado.',
+          icon: 'info',
+          confirmButtonColor: 'var(--primary)'
+        });
+      }
+    } catch (error: any) {
+      console.error('Erro ao executar query:', error);
+      console.error('Detalhes do erro:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message
+      });
+      Swal.fire({
+        title: 'Erro',
+        text: error.response?.data?.error || 'Erro ao executar a query.',
+        icon: 'error',
+        confirmButtonColor: 'var(--primary)'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const renderContent = () => {
     if (showResults) {
       return (
@@ -581,6 +646,14 @@ export const Home = () => {
           onHide={() => setShowExportModal(false)}
           onExport={handleExport}
         />
+
+        {showParameterForm && selectedReport && (
+          <ParameterInputForm
+            parameters={selectedReport.parametros}
+            onSubmit={handleParameterSubmit}
+            onClose={() => setShowParameterForm(false)}
+          />
+        )}
       </div>
     </div>
   );

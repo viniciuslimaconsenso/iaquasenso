@@ -17,6 +17,7 @@
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   width: 100%;
+  max-width: 500px;
   position: relative;
 }
 
@@ -34,7 +35,11 @@
 
 .modal-actions {
   display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
+  justify-content: space-between;
   margin-top: 2rem;
+}
+
+.modal-actions button {
+  min-width: 120px;
+  padding: 0.5rem 1rem;
 }

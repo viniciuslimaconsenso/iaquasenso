@@ -1,27 +1,20 @@
 import React from 'react';
 import './ConfirmationModal.css';
-import { Button } from '../Button/Button';
 
 interface ConfirmationModalProps {
   isOpen: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
   title: string;
   message: string;
-  confirmButtonText?: string;
-  cancelButtonText?: string;
-  confirmButtonVariant?: string;
+  onConfirm: () => void;
+  onClose: () => void;
 }
 
 export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   isOpen,
-  onClose,
-  onConfirm,
   title,
   message,
-  confirmButtonText = 'Confirmar',
-  cancelButtonText = 'Cancelar',
-  confirmButtonVariant = 'primary'
+  onConfirm,
+  onClose
 }) => {
   if (!isOpen) return null;
 
@@ -31,18 +24,19 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
         <h2 className="modal-title">{title}</h2>
         <p className="modal-message">{message}</p>
         <div className="modal-actions">
-          <Button
-            variant="outline-secondary"
+          <button 
+            className="btn btn-outline-custom d-flex align-items-center justify-content-center"
             onClick={onClose}
           >
-            {cancelButtonText}
-          </Button>
-          <Button
-            variant={confirmButtonVariant}
+            Cancelar
+          </button>
+          <button 
+            className="btn d-flex align-items-center justify-content-center"
+            style={{ backgroundColor: '#dc3545', color: 'white' }}
             onClick={onConfirm}
           >
-            {confirmButtonText}
-          </Button>
+            Excluir
+          </button>
         </div>
       </div>
     </div>
