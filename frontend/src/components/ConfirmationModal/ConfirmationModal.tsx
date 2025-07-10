@@ -7,6 +7,8 @@ interface ConfirmationModalProps {
   message: string;
   onConfirm: () => void;
   onClose: () => void;
+  confirmButtonText?: string;
+  confirmButtonVariant?: string;
 }
 
 export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
@@ -14,9 +16,21 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   title,
   message,
   onConfirm,
-  onClose
+  onClose,
+  confirmButtonText = 'Confirmar',
+  confirmButtonVariant = 'primary'
 }) => {
   if (!isOpen) return null;
+
+  const getButtonStyle = () => {
+    switch (confirmButtonVariant) {
+      case 'danger':
+        return { backgroundColor: '#dc3545', color: 'white' };
+      case 'primary':
+      default:
+        return { backgroundColor: 'var(--primary)', color: 'white' };
+    }
+  };
 
   return (
     <div className="modal-overlay">
@@ -32,10 +46,10 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
           </button>
           <button 
             className="btn d-flex align-items-center justify-content-center"
-            style={{ backgroundColor: '#dc3545', color: 'white' }}
+            style={getButtonStyle()}
             onClick={onConfirm}
           >
-            Excluir
+            {confirmButtonText}
           </button>
         </div>
       </div>

@@ -1,123 +1,98 @@
 import React, { useState } from 'react';
+import Modal from 'react-bootstrap/Modal';
 import { Input } from '../Input/Input';
-import { Select } from '../Select/Select';
 import { Button } from '../Button/Button';
 import './ParameterForm.css';
 
 interface Parameter {
   nome: string;
   tipo: string;
-  tamanho: string;
-  label: string;
+  valor: string;
 }
 
 interface ParameterFormProps {
-  onAddParameter: (parameter: Parameter) => void;
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (parameters: Record<string, any>) => void;
+  parameters: Parameter[];
 }
 
-const parameterTypes = [
-  { value: 'string', label: 'Texto' },
-  { value: 'number', label: 'Número' },
-  { value: 'date', label: 'Data' },
-  { value: 'boolean', label: 'Booleano' },
-];
-
-export const ParameterForm: React.FC<ParameterFormProps> = ({ onAddParameter }) => {
-  const [nome, setNome] = useState('');
-  const [tipo, setTipo] = useState('');
-  const [tamanho, setTamanho] = useState('');
-  const [label, setLabel] = useState('');
-  const [errors, setErrors] = useState({
-    nome: '',
-    tipo: '',
-    tamanho: '',
-    label: '',
-  });
+export const ParameterForm: React.FC<ParameterFormProps> = ({
+  isOpen,
+  onClose,
+  onSubmit,
+  parameters
+}) => {
+  const [parameterValues, setParameterValues] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const validateForm = () => {
-    const newErrors = {
-      nome: nome.trim() === '' ? 'Nome é obrigatório' : '',
-      tipo: tipo === '' ? 'Tipo é obrigatório' : '',
-      tamanho: tamanho.trim() === '' ? 'Tamanho é obrigatório' : '',
-      label: label.trim() === '' ? 'Label é obrigatório' : '',
-    };
+    const newErrors: Record<string, string> = {};
+    let isValid = true;
 
-    setErrors(newErrors);
-    return !Object.values(newErrors).some(error => error !== '');
-  };
-
-  const handleSubmit = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
-
-    onAddParameter({
-      nome,
-      tipo,
-      tamanho,
-      label,
+    parameters.forEach(param => {
+      if (!parameterValues[param.nome] || parameterValues[param.nome].trim() === '') {
+        newErrors[param.nome] = 'Este campo é obrigatório';
+        isValid = false;
+      }
     });
 
-    // Reset form
-    setNome('');
-    setTipo('');
-    setTamanho('');
-    setLabel('');
+    setErrors(newErrors);
+    return isValid;
+  };
+
+  const handleSubmit = () => {
+    if (validateForm()) {
+      onSubmit(parameterValues);
+    }
+  };
+
+  const handleInputChange = (paramName: string, value: string) => {
+    setParameterValues(prev => ({
+      ...prev,
+      [paramName]: value
+    }));
+
+    // Limpa o erro quando o usuário começa a digitar
+    if (errors[paramName]) {
+      setErrors(prev => ({
+        ...prev,
+        [paramName]: ''
+      }));
+    }
   };
 
   return (
-    <div className="parameter-form">
-      <div className="parameter-row">
-        <div className="parameter-group">
-          <Input
-            label="Nome do parâmetro"
-            value={nome}
-            onChange={(e) => setNome(e.target.value)}
-            placeholder="Digite o nome do parâmetro"
-            error={errors.nome}
-          />
+    <Modal show={isOpen} onHide={onClose} centered className="parameter-form-modal">
+      <Modal.Header closeButton>
+        <Modal.Title>Preencha os parâmetros</Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+        <div className="parameter-form">
+          {parameters.map((param, index) => (
+            <div key={index} className="parameter-input">
+              <Input
+                label={param.nome}
+                value={parameterValues[param.nome] || ''}
+                onChange={(e) => handleInputChange(param.nome, e.target.value)}
+                placeholder={`Digite o valor para ${param.nome}`}
+                error={errors[param.nome]}
+                type={param.tipo === 'number' ? 'number' : 'text'}
+              />
+            </div>
+          ))}
         </div>
-        <div className="parameter-group">
-          <Select
-            label="Tipo do parâmetro"
-            value={tipo}
-            onChange={(e) => setTipo(e.target.value)}
-            options={parameterTypes}
-            error={errors.tipo}
-          />
+      </Modal.Body>
+      <Modal.Footer>
+        <div className="d-flex justify-content-between w-100">
+          <Button variant="outline-custom" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button variant="primary" onClick={handleSubmit}>
+            Executar
+          </Button>
         </div>
-      </div>
-      <div className="parameter-row">
-        <div className="parameter-group">
-          <Input
-            label="Tamanho"
-            value={tamanho}
-            onChange={(e) => setTamanho(e.target.value)}
-            placeholder="Informe o tamanho"
-            error={errors.tamanho}
-          />
-        </div>
-        <div className="parameter-group">
-          <Input
-            label="Nome da label"
-            value={label}
-            onChange={(e) => setLabel(e.target.value)}
-            placeholder="Informe o nome da label"
-            error={errors.label}
-          />
-        </div>
-      </div>
-      <div className="parameter-actions">
-        <Button 
-          type="button" 
-          variant="primary" 
-          onClick={handleSubmit}
-        >
-          Inserir parâmetro
-        </Button>
-      </div>
-    </div>
+      </Modal.Footer>
+    </Modal>
   );
 }; 

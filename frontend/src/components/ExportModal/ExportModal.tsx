@@ -6,25 +6,25 @@ import { BsFiletypeCsv, BsFileText } from 'react-icons/bs';
 import './ExportModal.css';
 
 interface ExportModalProps {
-  show: boolean;
-  onHide: () => void;
+  isOpen: boolean;
+  onClose: () => void;
   onExport: (format: 'pdf' | 'csv' | 'txt') => void;
 }
 
 export const ExportModal: React.FC<ExportModalProps> = ({
-  show,
-  onHide,
+  isOpen,
+  onClose,
   onExport
 }) => {
   const [selectedFormat, setSelectedFormat] = useState<'pdf' | 'csv' | 'txt'>('pdf');
 
   const handleExport = () => {
     onExport(selectedFormat);
-    onHide();
+    onClose();
   };
 
   return (
-    <Modal show={show} onHide={onHide} centered className="export-modal">
+    <Modal show={isOpen} onHide={onClose} centered className="export-modal">
       <Modal.Header closeButton>
         <Modal.Title>Exportar dados</Modal.Title>
       </Modal.Header>
@@ -76,7 +76,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       </Modal.Body>
       <Modal.Footer>
         <div className="d-flex justify-content-between w-100">
-          <Button variant="outline-custom" onClick={onHide}>
+          <Button variant="outline-custom" onClick={onClose}>
             Cancelar
           </Button>
           <Button variant="primary" onClick={handleExport}>

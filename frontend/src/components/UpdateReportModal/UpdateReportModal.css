@@ -1,35 +1,31 @@
-.parameter-form-modal .modal-content {
+.update-report-modal .modal-content {
   background-color: white;
   border-radius: 8px;
   border: none;
 }
 
-.parameter-form-modal .modal-header {
+.update-report-modal .modal-header {
   border-bottom: 1px solid #e5e5e5;
   padding: 1rem;
 }
 
-.parameter-form-modal .modal-title {
+.update-report-modal .modal-title {
   font-size: 1.25rem;
   font-weight: 600;
   color: #333;
 }
 
-.parameter-form-modal .modal-body {
+.update-report-modal .modal-body {
   padding: 1rem;
 }
 
-.parameter-form {
+.update-form {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
-.parameter-input {
-  width: 100%;
-}
-
-.parameter-form-modal .modal-footer {
+.update-report-modal .modal-footer {
   border-top: 1px solid #e5e5e5;
   padding: 1rem;
 } 

@@ -1,23 +1,23 @@
-import { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header/Header';
 import { Select } from '../components/Select/Select';
 import { Table } from '../components/Table/Table';
 import { Button } from '../components/Button/Button';
-import { FiAlertCircle, FiDownload, FiTrash, FiPrinter, FiFile } from 'react-icons/fi';
+import { FiAlertCircle, FiDownload, FiTrash, FiPrinter, FiFile, FiRefreshCw, FiPlus, FiCopy, FiTrash2 } from 'react-icons/fi';
 import { FaBroom } from 'react-icons/fa';
 import { useReports } from '../contexts/ReportsContext';
 import { api } from '../services/api';
 import type { Relatorio } from '../services/api';
 import { ConfirmationModal } from '../components/ConfirmationModal/ConfirmationModal';
-import { DuplicateReportModal } from '../components/DuplicateReportModal/DuplicateReportModal';
 import { ExportModal } from '../components/ExportModal/ExportModal';
 import Swal from 'sweetalert2';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import './styles.css';
-import { ParameterInputForm } from '../components/ParameterForm/ParameterInputForm';
+import { ParameterForm } from '../components/ParameterForm/ParameterForm';
 import { LoadingOverlay } from '../components/LoadingOverlay/LoadingOverlay';
+import { UpdateReportModal } from '../components/UpdateReportModal/UpdateReportModal';
 
 const reportTypes = [
   { value: 'Gerencial', label: 'Gerencial' },
@@ -55,6 +55,7 @@ export const Home = () => {
     onConfirm: () => {},
   });
   const [showParameterForm, setShowParameterForm] = useState(false);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
 
   // Recarrega os dados quando a página é montada
   useEffect(() => {
@@ -369,6 +370,17 @@ export const Home = () => {
   const handlePrintClick = async (report: any) => {
     try {
       setIsLoading(true);
+      setSelectedReport(report);
+
+      // Verificar se o relatório tem parâmetros
+      if (report.hasParameters && report.parametros && report.parametros.length > 0) {
+        // Mostrar o formulário de parâmetros
+        setShowParameterForm(true);
+        setIsLoading(false);
+        return;
+      }
+
+      // Se não tiver parâmetros, executa direto
       const response = await api.post('/query/execute', {
         query: report.query
       });
@@ -471,7 +483,13 @@ export const Home = () => {
 
         setResultColumns(columns);
         setQueryResults(response.data);
-        setShowResults(true);
+        
+        // Se a ação veio do botão de imprimir, abre o modal de exportação
+        if (selectedReport.fromPrintButton) {
+          setShowExportModal(true);
+        } else {
+          setShowResults(true);
+        }
       } else {
         Swal.fire({
           title: 'Sem resultados',
@@ -495,7 +513,16 @@ export const Home = () => {
       });
     } finally {
       setIsLoading(false);
+      // Limpar a flag após o processamento
+      if (selectedReport) {
+        selectedReport.fromPrintButton = false;
+      }
     }
+  };
+
+  const handleUpdateClick = (report: any) => {
+    setSelectedReport(report);
+    setShowUpdateModal(true);
   };
 
   const renderContent = () => {
@@ -509,7 +536,7 @@ export const Home = () => {
             <div className="d-flex gap-2">
               <Button
                 variant="outline-custom"
-                onClick={() => handleDuplicateClick(selectedReport)}
+                onClick={() => handleUpdateClick(selectedReport)}
                 icon={<FiFile />}
                 style={{ width: '212px', height: '40px', borderRadius: '4px', border: '1px solid #404d65' }}
               >
@@ -570,13 +597,13 @@ export const Home = () => {
           actions={[
             {
               icon: <FiPrinter />,
-              onClick: (row) => handlePrintClick(row),
-              title: 'Exportar relatório'
+              onClick: (row) => handlePrintClick({ ...row, fromPrintButton: true }),
+              title: 'Imprimir relatório'
             },
             {
-              icon: <FiTrash />,
+              icon: <FiTrash2 style={{ color: '#dc3545' }} />,
               onClick: (row) => handleActionClick('delete', row),
-              title: 'Excluir'
+              title: 'Excluir relatório'
             }
           ]}
         />
@@ -586,75 +613,73 @@ export const Home = () => {
 
   return (
     <div className="container-fluid">
-      <div className="content-wrapper">
-        <Header
-          title="Exportar Dados"
-          subtitle="Para exportar relatórios de dados, preencha os campos abaixo"
-          cadastroPath="/cadastrar"
-        />
+      <LoadingOverlay isLoading={isLoading} />
+      <Header
+        title="Exportar Dados"
+        subtitle="Para exportar relatórios de dados, preencha os campos abaixo"
+        cadastroPath="/cadastrar"
+      />
 
-        {!showResults && (
-          <div className="form-section">
-            <div className="d-flex gap-3 align-items-end">
-              <div className="flex-grow-1">
-                <Select
-                  options={reportTypes}
-                  value={selectedType}
-                  onChange={(e) => setSelectedType(e.target.value)}
-                  label="Tipo do relatório"
-                />
-              </div>
-              <button 
-                className="btn btn-outline-custom d-flex align-items-center justify-content-center gap-2"
-                onClick={handleReset}
-                style={{ height: '38px', paddingLeft: '1rem', paddingRight: '1rem' }}
-              >
-                <FaBroom />
-                <span>Limpar</span>
-              </button>
+      {!showResults && (
+        <div className="form-section">
+          <div className="d-flex gap-3 align-items-end">
+            <div className="flex-grow-1">
+              <Select
+                options={reportTypes}
+                value={selectedType}
+                onChange={(e) => setSelectedType(e.target.value)}
+                label="Tipo do relatório"
+              />
             </div>
+            <button 
+              className="btn btn-outline-custom d-flex align-items-center justify-content-center gap-2"
+              onClick={handleReset}
+              style={{ height: '38px', paddingLeft: '1rem', paddingRight: '1rem' }}
+            >
+              <FaBroom />
+              <span>Limpar</span>
+            </button>
           </div>
-        )}
+        </div>
+      )}
 
-        {renderContent()}
+      {renderContent()}
 
-        <ConfirmationModal
-          isOpen={modalConfig.isOpen}
-          onClose={closeModal}
-          onConfirm={() => {
-            modalConfig.onConfirm();
-            closeModal();
-          }}
-          title={modalConfig.title}
-          message={modalConfig.message}
-          confirmButtonText={modalConfig.confirmButtonText}
-          confirmButtonVariant={modalConfig.confirmButtonVariant}
-        />
+      <ConfirmationModal
+        isOpen={modalConfig.isOpen}
+        onClose={closeModal}
+        onConfirm={() => {
+          modalConfig.onConfirm();
+          closeModal();
+        }}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        confirmButtonText={modalConfig.confirmButtonText}
+        confirmButtonVariant={modalConfig.confirmButtonVariant}
+      />
 
-        <DuplicateReportModal
-          show={showDuplicateModal}
-          onHide={() => setShowDuplicateModal(false)}
-          report={selectedReport}
-          onSuccess={() => {
-            setShowDuplicateModal(false);
-            reloadReports();
-          }}
-        />
+      <ParameterForm
+        isOpen={showParameterForm}
+        onClose={() => setShowParameterForm(false)}
+        onSubmit={handleParameterSubmit}
+        parameters={selectedReport?.parametros || []}
+      />
 
-        <ExportModal
-          show={showExportModal}
-          onHide={() => setShowExportModal(false)}
-          onExport={handleExport}
-        />
+      <ExportModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        onExport={handleExport}
+      />
 
-        {showParameterForm && selectedReport && (
-          <ParameterInputForm
-            parameters={selectedReport.parametros}
-            onSubmit={handleParameterSubmit}
-            onClose={() => setShowParameterForm(false)}
-          />
-        )}
-      </div>
+      <UpdateReportModal
+        isOpen={showUpdateModal}
+        onClose={() => setShowUpdateModal(false)}
+        report={selectedReport}
+        onSuccess={() => {
+          setShowUpdateModal(false);
+          reloadReports();
+        }}
+      />
     </div>
   );
 }; 

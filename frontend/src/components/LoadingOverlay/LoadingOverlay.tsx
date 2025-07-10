@@ -1,9 +1,16 @@
+import React from 'react';
 import { useLoading } from '../../contexts/LoadingContext';
+import './LoadingOverlay.css';
 
-export const LoadingOverlay = () => {
-  const { isLoading } = useLoading();
+interface LoadingOverlayProps {
+  isLoading?: boolean;
+}
 
-  if (!isLoading) return null;
+export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ isLoading: propIsLoading }) => {
+  const { isLoading: contextIsLoading } = useLoading();
+  const shouldShow = propIsLoading ?? contextIsLoading;
+
+  if (!shouldShow) return null;
 
   return (
     <div className="loading-overlay">
