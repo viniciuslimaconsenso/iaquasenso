@@ -1,7 +1,9 @@
+.update-report-modal .modal-dialog {
+  max-width: 800px;
+}
+
 .update-report-modal .modal-content {
-  background-color: white;
   border-radius: 8px;
-  border: none;
 }
 
 .update-report-modal .modal-header {
@@ -23,9 +25,75 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  padding: 1rem;
 }
 
-.update-report-modal .modal-footer {
-  border-top: 1px solid #e5e5e5;
+.parameters-section {
+  margin-top: 2rem;
+  border-top: 1px solid #dee2e6;
+  padding-top: 1rem;
+}
+
+.parameters-section h4 {
+  color: var(--text-color);
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+}
+
+.radio-group {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.form-check-inline {
+  display: flex;
+  align-items: center;
+  margin-right: 0;
+  gap: 0.5rem;
+}
+
+.form-check-input[type="radio"] {
+  margin-top: 0;
+  cursor: pointer;
+}
+
+.form-check-label {
+  color: var(--text-color);
+  font-size: 0.9rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Ajustes para o formulário de parâmetros */
+.parameter-input-form {
+  margin-bottom: 2rem;
   padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+}
+
+/* Ajustes para a tabela de parâmetros */
+.parameters-table-container {
+  margin-top: 1rem;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.modal-footer {
+  border-top: 1px solid #dee2e6;
+  padding: 1rem;
+}
+
+/* Estilo para mensagens de erro */
+.alert-danger {
+  color: #721c24;
+  background-color: #f8d7da;
+  border-color: #f5c6cb;
+  padding: 0.75rem 1.25rem;
+  margin-bottom: 1rem;
+  border: 1px solid transparent;
+  border-radius: 0.25rem;
+  font-size: 0.9rem;
 } 

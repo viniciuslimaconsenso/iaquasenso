@@ -7,6 +7,7 @@ import { TextArea } from '../components/TextArea/TextArea';
 import { Button } from '../components/Button/Button';
 import { ParameterInputForm } from '../components/ParameterForm/ParameterInputForm';
 import { ParametersTable } from '../components/ParametersTable/ParametersTable';
+import { TableTags } from '../components/TableTags/TableTags';
 import { api } from '../services/api';
 import Swal from 'sweetalert2';
 import './styles.css';
@@ -40,7 +41,8 @@ const PROHIBITED_WORDS = [
   ';',
   '--',
   '/*',
-  '*/'
+  '*/',
+  'select *'  // Adicionado para proibir SELECT *
 ];
 
 export const Register = () => {
@@ -76,9 +78,43 @@ export const Register = () => {
     const value = e.target.value;
     setQuery(value);
     
+    // Verificar palavras proibidas
     if (checkProhibitedWords(value)) {
       setErrors(prev => ({ ...prev, query: 'Comando não autorizado' }));
+      return;
+    }
+
+    // Verificar se está usando SELECT *
+    const hasSelectAll = /select\s+\*\s+from/i.test(value);
+    if (hasSelectAll) {
+      setErrors(prev => ({ ...prev, query: 'Não é permitido usar SELECT *. Por favor, especifique as colunas desejadas.' }));
+      return;
+    }
+
+    setErrors(prev => ({ ...prev, query: '' }));
+  };
+
+  // Handler para seleção de tabela
+  const handleTableSelect = (defaultQuery: string) => {
+    // Se já existe uma query, perguntar se deseja substituir
+    if (query.trim()) {
+      Swal.fire({
+        title: 'Substituir query?',
+        text: 'Já existe uma query no campo. Deseja substituí-la?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sim, substituir',
+        cancelButtonText: 'Não, manter atual',
+        confirmButtonColor: 'var(--primary)',
+        cancelButtonColor: '#6c757d'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          setQuery(defaultQuery);
+          setErrors(prev => ({ ...prev, query: '' }));
+        }
+      });
     } else {
+      setQuery(defaultQuery);
       setErrors(prev => ({ ...prev, query: '' }));
     }
   };
@@ -154,9 +190,22 @@ export const Register = () => {
     const newErrors = {
       nome: nome.trim() === '' ? 'Nome é obrigatório' : '',
       descricao: descricao.trim() === '' ? 'Descrição é obrigatória' : '',
-      query: query.trim() === '' ? 'Query é obrigatória' : checkProhibitedWords(query) ? 'Comando não autorizado' : '',
+      query: '',
       tipoRelatorioId: tipoRelatorioId === '' ? 'Tipo de relatório é obrigatório' : ''
     };
+
+    // Validar query vazia
+    if (query.trim() === '') {
+      newErrors.query = 'Query é obrigatória';
+    }
+    // Validar palavras proibidas
+    else if (checkProhibitedWords(query)) {
+      newErrors.query = 'Comando não autorizado';
+    }
+    // Validar SELECT *
+    else if (/select\s+\*\s+from/i.test(query)) {
+      newErrors.query = 'Não é permitido usar SELECT *. Por favor, especifique as colunas desejadas.';
+    }
 
     // Encontrar todos os parâmetros na query (formato :nome_parametro)
     const queryParamsMatch = query.match(/:[a-zA-Z_][a-zA-Z0-9_]*/g) || [];
@@ -168,7 +217,6 @@ export const Register = () => {
     }
     // Se marcou que tem parâmetros, fazer as validações
     else if (hasParameters) {
-
       // Se encontrou parâmetros na query mas não tem nenhum na tabela
       if (queryParams.length > 0 && parameters.length === 0) {
         newErrors.query = `Foram encontrados os seguintes parâmetros na query que não foram adicionados: ${queryParams.join(', ')}`;
@@ -337,6 +385,7 @@ export const Register = () => {
             </div>
 
             <div ref={queryRef}>
+              <TableTags onSelectTable={handleTableSelect} />
               <TextArea
                 label={"Query"}
                 labelExtra={<span className="required-asterisk">*</span>}
@@ -346,30 +395,6 @@ export const Register = () => {
                 error={errors.query}
                 maxLength={2000}
                 showCounter
-              />
-            </div>
-
-            <div className="available-tables">
-              <div className="available-tables-title">Tabelas disponíveis para consulta</div>
-              <div className="table-tags">
-                <span className="table-tag">clientes</span>
-                <span className="table-tag">produtos</span>
-                <span className="table-tag">vendas</span>
-                <span className="table-tag">venda_itens</span>
-              </div>
-            </div>
-
-            <div ref={descricaoRef}>
-              <TextArea
-                label={"Descrição"}
-                labelExtra={<span className="required-asterisk">*</span>}
-                value={descricao}
-                onChange={handleDescricaoChange}
-                placeholder="Digite a descrição do relatório"
-                error={errors.descricao}
-                maxLength={400}
-                showCounter
-                style={{ minHeight: '80px' }}
               />
             </div>
 
