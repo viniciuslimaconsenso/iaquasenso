@@ -4,7 +4,6 @@ import './Header.css';
 interface HeaderProps {
   title: string;
   subtitle?: string;
-  onCadastroClick?: () => void;
   cadastroPath?: string;
   showButton?: boolean;
 }
@@ -12,12 +11,9 @@ interface HeaderProps {
 export const Header = ({
   title,
   subtitle,
-  onCadastroClick,
   cadastroPath = '/cadastrar',
   showButton = true
 }: HeaderProps) => {
-  console.log('Header rendered with cadastroPath:', cadastroPath);
-  
   return (
     <div className="header">
       <div className="header-content">
@@ -27,7 +23,6 @@ export const Header = ({
       {showButton && (
         <Button
           variant="primary"
-          onClick={onCadastroClick}
           to={cadastroPath}
         >
           Cadastrar

@@ -384,6 +384,19 @@ export const Register = () => {
               </div>
             </div>
 
+            <div ref={descricaoRef}>
+              <TextArea
+                label={"Descrição"}
+                labelExtra={<span className="required-asterisk">*</span>}
+                value={descricao}
+                onChange={handleDescricaoChange}
+                placeholder="Digite a descrição do relatório"
+                error={errors.descricao}
+                maxLength={500}
+                showCounter
+              />
+            </div>
+
             <div ref={queryRef}>
               <TableTags onSelectTable={handleTableSelect} />
               <TextArea

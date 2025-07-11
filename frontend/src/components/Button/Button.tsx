@@ -1,10 +1,10 @@
-import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  children: React.ReactNode;
   variant?: 'primary' | 'secondary' | 'outline-custom';
   to?: string;
-  icon?: ReactNode;
+  icon?: React.ReactNode;
 }
 
 export const Button = ({ 
@@ -20,16 +20,11 @@ export const Button = ({
   const navigate = useNavigate();
 
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    console.log('Button clicked, to:', to);
-    
-    if (onClick) {
-      console.log('Executing onClick handler');
-      onClick(e);
-    }
-    
     if (to) {
-      console.log('Navigating to:', to);
+      e.preventDefault();
       navigate(to);
+    } else if (onClick) {
+      onClick(e);
     }
   };
 
