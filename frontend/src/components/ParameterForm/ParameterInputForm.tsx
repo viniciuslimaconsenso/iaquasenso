@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Input } from '../Input/Input';
+import { Select } from '../Select/Select';
+import { Button } from '../Button/Button';
 import './ParameterForm.css';
 
 interface Parameter {
@@ -10,130 +12,96 @@ interface Parameter {
 }
 
 interface ParameterInputFormProps {
-  parameters: Parameter[];
-  onSubmit: (parameters: Record<string, any>) => void;
-  onClose: () => void;
+  onAddParameter: (parameter: Parameter) => void;
 }
 
-export const ParameterInputForm: React.FC<ParameterInputFormProps> = ({
-  parameters,
-  onSubmit,
-  onClose
-}) => {
-  const [values, setValues] = useState<Record<string, any>>({});
-  const [errors, setErrors] = useState<Record<string, string>>({});
+const parameterTypes = [
+  { value: 'string', label: 'Texto' },
+  { value: 'number', label: 'Número' },
+  { value: 'date', label: 'Data' },
+  { value: 'boolean', label: 'Booleano' }
+];
+
+export const ParameterInputForm: React.FC<ParameterInputFormProps> = ({ onAddParameter }) => {
+  const [parameter, setParameter] = useState<Parameter>({
+    nome: '',
+    tipo: '',
+    tamanho: '',
+    label: ''
+  });
+
+  const [errors, setErrors] = useState({
+    nome: '',
+    tipo: '',
+    tamanho: '',
+    label: ''
+  });
 
   const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-    let isValid = true;
-
-    parameters.forEach(param => {
-      if (!values[param.nome] && values[param.nome] !== 0) {
-        newErrors[param.nome] = `${param.label} é obrigatório`;
-        isValid = false;
-      }
-
-      // Validação específica por tipo
-      if (values[param.nome]) {
-        if (param.tipo === 'number' && isNaN(Number(values[param.nome]))) {
-          newErrors[param.nome] = `${param.label} deve ser um número`;
-          isValid = false;
-        } else if (param.tipo === 'date' && !values[param.nome].match(/^\d{4}-\d{2}-\d{2}$/)) {
-          newErrors[param.nome] = `${param.label} deve estar no formato YYYY-MM-DD`;
-          isValid = false;
-        }
-      }
-    });
+    const newErrors = {
+      nome: parameter.nome.trim() === '' ? 'Nome é obrigatório' : '',
+      tipo: parameter.tipo === '' ? 'Tipo é obrigatório' : '',
+      tamanho: parameter.tamanho.trim() === '' ? 'Tamanho é obrigatório' : '',
+      label: parameter.label.trim() === '' ? 'Label é obrigatório' : ''
+    };
 
     setErrors(newErrors);
-    return isValid;
+    return !Object.values(newErrors).some(error => error !== '');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm()) {
-      return;
-    }
-
-    // Converter valores de acordo com o tipo
-    const processedValues = parameters.reduce((acc, param) => {
-      let value = values[param.nome];
-
-      // Converter valor de acordo com o tipo
-      if (param.tipo === 'number') {
-        value = Number(value);
-      } else if (param.tipo === 'date') {
-        // Manter o formato YYYY-MM-DD para datas
-        if (!value.match(/^\d{4}-\d{2}-\d{2}$/)) {
-          value = new Date(value).toISOString().split('T')[0];
-        }
-      } else if (param.tipo === 'boolean') {
-        value = Boolean(value);
-      }
-
-      return {
-        ...acc,
-        [param.nome]: value
-      };
-    }, {});
-
-    console.log('Submitting parameters:', {
-      original: values,
-      processed: processedValues
-    });
-
-    onSubmit(processedValues);
-  };
-
-  const handleInputChange = (paramName: string, value: string) => {
-    setValues(prev => ({
-      ...prev,
-      [paramName]: value
-    }));
-
-    // Clear error when user types
-    if (errors[paramName]) {
-      setErrors(prev => ({
-        ...prev,
-        [paramName]: ''
-      }));
+    if (validateForm()) {
+      onAddParameter(parameter);
+      setParameter({
+        nome: '',
+        tipo: '',
+        tamanho: '',
+        label: ''
+      });
     }
   };
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <h2>Preencha os parâmetros</h2>
-        <form onSubmit={handleSubmit}>
-          {parameters.map(param => (
-            <div key={param.nome} className="parameter-group">
-              <Input
-                label={param.label}
-                type={param.tipo === 'number' ? 'number' : param.tipo === 'date' ? 'date' : 'text'}
-                value={values[param.nome] || ''}
-                onChange={(e) => handleInputChange(param.nome, e.target.value)}
-                error={errors[param.nome]}
-              />
-            </div>
-          ))}
-          <div className="modal-actions">
-            <button 
-              type="button" 
-              className="btn btn-outline-custom d-flex align-items-center justify-content-center"
-              onClick={onClose}
-            >
-              Cancelar
-            </button>
-            <button 
-              type="submit" 
-              className="btn btn-primary d-flex align-items-center justify-content-center"
-            >
-              Executar
-            </button>
-          </div>
-        </form>
+    <form onSubmit={handleSubmit} className="parameter-input-form">
+      <div className="form-row">
+        <Input
+          label="Nome do Parâmetro"
+          value={parameter.nome}
+          onChange={(e) => setParameter({ ...parameter, nome: e.target.value })}
+          placeholder="Ex: data_inicio"
+          error={errors.nome}
+        />
+        <Select
+          label="Tipo do Parâmetro"
+          value={parameter.tipo}
+          onChange={(e) => setParameter({ ...parameter, tipo: e.target.value })}
+          options={parameterTypes}
+          error={errors.tipo}
+        />
       </div>
-    </div>
+      <div className="form-row">
+        <Input
+          label="Tamanho"
+          value={parameter.tamanho}
+          onChange={(e) => setParameter({ ...parameter, tamanho: e.target.value })}
+          placeholder="Ex: 10"
+          error={errors.tamanho}
+        />
+        <Input
+          label="Label"
+          value={parameter.label}
+          onChange={(e) => setParameter({ ...parameter, label: e.target.value })}
+          placeholder="Ex: Data Inicial"
+          error={errors.label}
+        />
+      </div>
+      <div className="form-actions">
+        <Button type="button" variant="primary" onClick={handleSubmit}>
+          Adicionar Parâmetro
+        </Button>
+      </div>
+    </form>
   );
 }; 

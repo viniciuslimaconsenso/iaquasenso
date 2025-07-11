@@ -5,7 +5,7 @@ import { Input } from '../components/Input/Input';
 import { Select } from '../components/Select/Select';
 import { TextArea } from '../components/TextArea/TextArea';
 import { Button } from '../components/Button/Button';
-import { ParameterForm } from '../components/ParameterForm/ParameterForm';
+import { ParameterInputForm } from '../components/ParameterForm/ParameterInputForm';
 import { ParametersTable } from '../components/ParametersTable/ParametersTable';
 import { api } from '../services/api';
 import Swal from 'sweetalert2';
@@ -115,6 +115,21 @@ export const Register = () => {
   };
 
   const handleAddParameter = (parameter: Parameter) => {
+    // Verificar se já existe um parâmetro com o mesmo nome
+    const parameterExists = parameters.some(
+      p => p.nome.toLowerCase() === parameter.nome.toLowerCase()
+    );
+
+    if (parameterExists) {
+      Swal.fire({
+        title: 'Erro',
+        text: `Já existe um parâmetro com o nome "${parameter.nome}"`,
+        icon: 'error',
+        confirmButtonColor: 'var(--primary)'
+      });
+      return;
+    }
+
     setParameters([...parameters, parameter]);
   };
 
@@ -143,6 +158,41 @@ export const Register = () => {
       tipoRelatorioId: tipoRelatorioId === '' ? 'Tipo de relatório é obrigatório' : ''
     };
 
+    // Encontrar todos os parâmetros na query (formato :nome_parametro)
+    const queryParamsMatch = query.match(/:[a-zA-Z_][a-zA-Z0-9_]*/g) || [];
+    const queryParams = queryParamsMatch.map(p => p.substring(1)); // Remove o : do início
+
+    // Se existem parâmetros na query mas marcou que não tem parâmetros
+    if (queryParams.length > 0 && !hasParameters) {
+      newErrors.query = `Foram encontrados os seguintes parâmetros na query: ${queryParams.join(', ')}. Marque "Sim" na opção "A query tem parâmetros?" e adicione-os.`;
+    }
+    // Se marcou que tem parâmetros, fazer as validações
+    else if (hasParameters) {
+
+      // Se encontrou parâmetros na query mas não tem nenhum na tabela
+      if (queryParams.length > 0 && parameters.length === 0) {
+        newErrors.query = `Foram encontrados os seguintes parâmetros na query que não foram adicionados: ${queryParams.join(', ')}`;
+      }
+      // Se não encontrou parâmetros na query mas marcou que tem parâmetros
+      else if (queryParams.length === 0) {
+        newErrors.query = 'Você marcou que a query tem parâmetros, mas nenhum parâmetro foi encontrado na query (formato :nome_parametro)';
+      }
+      // Se tem parâmetros na query e na tabela, verificar se todos correspondem
+      else if (parameters.length > 0) {
+        // Verificar parâmetros da tabela que não estão na query
+        const missingInQuery = parameters.filter(param => !queryParams.includes(param.nome));
+        // Verificar parâmetros da query que não estão na tabela
+        const missingInTable = queryParams.filter(param => !parameters.find(p => p.nome === param));
+
+        if (missingInQuery.length > 0) {
+          newErrors.query = `Os seguintes parâmetros da tabela não foram encontrados na query: ${missingInQuery.map(p => p.nome).join(', ')}`;
+        }
+        else if (missingInTable.length > 0) {
+          newErrors.query = `Os seguintes parâmetros da query não foram adicionados na tabela: ${missingInTable.join(', ')}`;
+        }
+      }
+    }
+
     setErrors(newErrors);
     
     // Se houver erros, faz o scroll para o primeiro campo com erro
@@ -164,10 +214,16 @@ export const Register = () => {
     }
 
     try {
+      // Primeiro, criar a query
+      const queryResponse = await api.post('/queries', {
+        query: query
+      });
+
+      // Depois, criar o relatório com a referência para a query
       await api.post('/relatorios', {
         nome,
         descricao,
-        query,
+        query_id: queryResponse.data.id,
         tipo_relatorio_id: Number(tipoRelatorioId),
         has_parameters: hasParameters,
         parameters: hasParameters ? parameters : []
@@ -348,7 +404,7 @@ export const Register = () => {
 
               {hasParameters && (
                 <>
-                  <ParameterForm onAddParameter={handleAddParameter} />
+                  <ParameterInputForm onAddParameter={handleAddParameter} />
                   <ParametersTable
                     parameters={parameters}
                     onDeleteParameter={handleDeleteParameter}

@@ -78,6 +78,7 @@ export const ParametersTable: React.FC<ParametersTableProps> = ({
               <td>{param.label}</td>
               <td>
                 <button
+                  type="button"
                   className="delete-button"
                   onClick={() => handleDelete(index)}
                   title="Excluir parâmetro"

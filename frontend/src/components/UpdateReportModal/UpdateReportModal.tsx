@@ -43,7 +43,7 @@ export const UpdateReportModal: React.FC<UpdateReportModalProps> = ({
       setNome(report.nome || '');
       setDescricao(report.descricao || '');
       setTipo(report.tipoRelatorio?.tipo || '');
-      setQuery(report.query || '');
+      setQuery(report.query?.query || '');
     }
   }, [report]);
 
@@ -63,11 +63,24 @@ export const UpdateReportModal: React.FC<UpdateReportModalProps> = ({
     if (!validateForm()) return;
 
     try {
+      // Primeiro, atualizar a query
+      if (report.queryId) {
+        await api.put(`/queries/${report.queryId}`, {
+          query: query
+        });
+      } else {
+        const queryResponse = await api.post('/queries', {
+          query: query
+        });
+        report.queryId = queryResponse.data.id;
+      }
+
+      // Depois, atualizar o relatório
       await api.put(`/relatorios/${report.id}`, {
         nome,
         descricao,
-        tipoRelatorio: tipo,
-        query
+        tipo_relatorio_id: report.tipoRelatorioId,
+        query_id: report.queryId
       });
 
       Swal.fire({

@@ -24,13 +24,24 @@ model TipoRelatorio {
   @@map("tipos_relatorio")
 }
 
+model Query {
+  id         Int         @id @default(autoincrement())
+  query      String
+  relatorios Relatorio[]
+  createdAt  DateTime    @default(now()) @map("created_at")
+  updatedAt  DateTime    @updatedAt @map("updated_at")
+
+  @@map("queries")
+}
+
 model Relatorio {
   id              Int           @id @default(autoincrement())
   nome            String
   descricao       String?
   tipoRelatorioId Int           @map("tipo_relatorio_id")
   tipoRelatorio   TipoRelatorio @relation(fields: [tipoRelatorioId], references: [id])
-  query           String?
+  queryId         Int?          @map("query_id")
+  query           Query?        @relation(fields: [queryId], references: [id])
   hasParameters   Boolean       @default(false) @map("has_parameters")
   parametros      Parametro[]
   createdAt       DateTime      @default(now()) @map("created_at")

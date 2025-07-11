@@ -1,22 +1,5 @@
-.parameter-form-modal .modal-content {
-  background-color: white;
-  border-radius: 8px;
-  border: none;
-}
-
-.parameter-form-modal .modal-header {
-  border-bottom: 1px solid #e5e5e5;
-  padding: 1rem;
-}
-
-.parameter-form-modal .modal-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #333;
-}
-
-.parameter-form-modal .modal-body {
-  padding: 1rem;
+.parameter-form-modal .modal-dialog {
+  max-width: 600px;
 }
 
 .parameter-form {
@@ -26,10 +9,32 @@
 }
 
 .parameter-input {
-  width: 100%;
+  margin-bottom: 1rem;
 }
 
-.parameter-form-modal .modal-footer {
-  border-top: 1px solid #e5e5e5;
+.parameter-input:last-child {
+  margin-bottom: 0;
+}
+
+/* Estilos para o ParameterInputForm */
+.parameter-input-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
   padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
 } 

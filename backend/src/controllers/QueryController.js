@@ -1,5 +1,4 @@
-import { PrismaClient } from '../generated/prisma/index.js';
-const prisma = new PrismaClient();
+import prisma from '../lib/prisma.js';
 
 // Função para converter BigInt para Number em objetos
 const convertBigIntToNumber = (data) => {
@@ -25,14 +24,79 @@ const convertBigIntToNumber = (data) => {
 };
 
 class QueryController {
+  async store(req, res) {
+    try {
+      const { query } = req.body;
+
+      const queryRecord = await prisma.query.create({
+        data: {
+          query
+        }
+      });
+
+      return res.status(201).json(queryRecord);
+    } catch (error) {
+      console.error('Erro ao criar query:', error);
+      return res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+  }
+
+  async show(req, res) {
+    try {
+      const { id } = req.params;
+
+      const queryRecord = await prisma.query.findUnique({
+        where: { id: Number(id) }
+      });
+
+      if (!queryRecord) {
+        return res.status(404).json({ error: 'Query não encontrada' });
+      }
+
+      return res.json(queryRecord);
+    } catch (error) {
+      console.error('Erro ao buscar query:', error);
+      return res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+  }
+
+  async update(req, res) {
+    try {
+      const { id } = req.params;
+      const { query } = req.body;
+
+      const queryRecord = await prisma.query.update({
+        where: { id: Number(id) },
+        data: {
+          query
+        }
+      });
+
+      return res.json(queryRecord);
+    } catch (error) {
+      console.error('Erro ao atualizar query:', error);
+      return res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+  }
+
+  async destroy(req, res) {
+    try {
+      const { id } = req.params;
+
+      await prisma.query.delete({
+        where: { id: Number(id) }
+      });
+
+      return res.status(204).send();
+    } catch (error) {
+      console.error('Erro ao excluir query:', error);
+      return res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+  }
+
   async execute(req, res) {
     try {
       const { query, parameters } = req.body;
-
-      console.log('Received request:', {
-        query,
-        parameters
-      });
 
       if (!query) {
         return res.status(400).json({ error: 'Query não fornecida' });
@@ -157,67 +221,6 @@ class QueryController {
       return res.status(500).json({ 
         error: `Erro ao executar a query: ${error.message}` 
       });
-    }
-  }
-
-  // Método para testar a query com exemplos
-  async examples(req, res) {
-    try {
-      const examples = {
-        "Vendas por Período": {
-          query: `
-            SELECT 
-              c.nome as cliente,
-              COUNT(v.id) as total_vendas,
-              SUM(vi.quantidade * vi.preco_unitario) as valor_total
-            FROM clientes c
-            LEFT JOIN vendas v ON v.cliente_id = c.id
-            LEFT JOIN venda_itens vi ON vi.venda_id = v.id
-            WHERE v.data_venda BETWEEN :data_inicio AND :data_fim
-            GROUP BY c.id, c.nome
-            ORDER BY valor_total DESC
-          `,
-          parameters: [
-            {
-              nome: "data_inicio",
-              tipo: "date",
-              tamanho: "10",
-              label: "Data Inicial"
-            },
-            {
-              nome: "data_fim",
-              tipo: "date",
-              tamanho: "10",
-              label: "Data Final"
-            }
-          ]
-        },
-        "Vendas por Produto": {
-          query: `
-            SELECT 
-              p.nome as produto,
-              SUM(vi.quantidade) as quantidade_vendida,
-              SUM(vi.quantidade * vi.preco_unitario) as valor_total
-            FROM produtos p
-            LEFT JOIN venda_itens vi ON vi.produto_id = p.id
-            LEFT JOIN vendas v ON v.id = vi.venda_id
-            WHERE p.id = :produto_id
-            GROUP BY p.id, p.nome
-          `,
-          parameters: [
-            {
-              nome: "produto_id",
-              tipo: "number",
-              tamanho: "10",
-              label: "Produto"
-            }
-          ]
-        }
-      };
-
-      return res.json(examples);
-    } catch (error) {
-      return res.status(500).json({ error: 'Erro ao buscar exemplos' });
     }
   }
 }

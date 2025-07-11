@@ -6,7 +6,9 @@ async function main() {
   await prisma.venda.deleteMany();
   await prisma.produto.deleteMany();
   await prisma.cliente.deleteMany();
+  await prisma.parametro.deleteMany();
   await prisma.relatorio.deleteMany();
+  await prisma.query.deleteMany();
   await prisma.tipoRelatorio.deleteMany();
 
   // Criar os tipos de relatório
@@ -142,12 +144,9 @@ async function main() {
     }
   }
 
-  // Criar relatórios
-  await prisma.relatorio.create({
+  // Criar queries
+  const queryVendasPorCliente = await prisma.query.create({
     data: {
-      nome: 'Resumo de Vendas por Cliente',
-      descricao: 'Análise gerencial detalhada das vendas por cliente',
-      tipoRelatorioId: tipoGerencial.id,
       query: `SELECT 
         c.nome as cliente,
         COUNT(v.id) as total_vendas,
@@ -157,15 +156,12 @@ async function main() {
       LEFT JOIN vendas v ON v.cliente_id = c.id
       LEFT JOIN venda_itens vi ON vi.venda_id = v.id
       GROUP BY c.id, c.nome
-      ORDER BY valor_total DESC`,
-    },
+      ORDER BY valor_total DESC`
+    }
   });
 
-  await prisma.relatorio.create({
+  const queryFaturamentoPorPeriodo = await prisma.query.create({
     data: {
-      nome: 'Faturamento por Período',
-      descricao: 'Análise do faturamento por período',
-      tipoRelatorioId: tipoFinanceiro.id,
       query: `SELECT 
         CAST(v.data_venda AS DATE) as data,
         COUNT(DISTINCT v.id) as num_vendas,
@@ -173,15 +169,12 @@ async function main() {
       FROM vendas v
       JOIN venda_itens vi ON vi.venda_id = v.id
       GROUP BY CAST(v.data_venda AS DATE)
-      ORDER BY data DESC`,
-    },
+      ORDER BY data DESC`
+    }
   });
 
-  await prisma.relatorio.create({
+  const queryControleEstoque = await prisma.query.create({
     data: {
-      nome: 'Controle de Estoque',
-      descricao: 'Relatório de controle de estoque e produtos',
-      tipoRelatorioId: tipoOperacional.id,
       query: `SELECT 
         p.nome,
         p.estoque as estoque_atual,
@@ -190,7 +183,35 @@ async function main() {
       FROM produtos p
       LEFT JOIN venda_itens vi ON vi.produto_id = p.id
       GROUP BY p.id, p.nome, p.estoque, p.preco
-      ORDER BY p.estoque ASC`,
+      ORDER BY p.estoque ASC`
+    }
+  });
+
+  // Criar relatórios
+  await prisma.relatorio.create({
+    data: {
+      nome: 'Resumo de Vendas por Cliente',
+      descricao: 'Análise gerencial detalhada das vendas por cliente',
+      tipoRelatorioId: tipoGerencial.id,
+      queryId: queryVendasPorCliente.id
+    },
+  });
+
+  await prisma.relatorio.create({
+    data: {
+      nome: 'Faturamento por Período',
+      descricao: 'Análise do faturamento por período',
+      tipoRelatorioId: tipoFinanceiro.id,
+      queryId: queryFaturamentoPorPeriodo.id
+    },
+  });
+
+  await prisma.relatorio.create({
+    data: {
+      nome: 'Controle de Estoque',
+      descricao: 'Relatório de controle de estoque e produtos',
+      tipoRelatorioId: tipoOperacional.id,
+      queryId: queryControleEstoque.id
     },
   });
 

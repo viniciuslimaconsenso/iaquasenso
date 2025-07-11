@@ -15,8 +15,11 @@ routes.delete('/relatorios/:id', RelatorioController.destroy);
 // Rotas de Tipos de Relatório
 routes.get('/tipos-relatorio', TipoRelatorioController.index);
 
-// Rotas de Query SQL
-routes.post('/query/execute', QueryController.execute);
-routes.get('/query/examples', QueryController.examples);
+// Rotas de Query
+routes.get('/queries/:id', QueryController.show);
+routes.post('/queries', QueryController.store);
+routes.put('/queries/:id', QueryController.update);
+routes.delete('/queries/:id', QueryController.destroy);
+routes.post('/queries/execute', QueryController.execute);
 
 export default routes; 

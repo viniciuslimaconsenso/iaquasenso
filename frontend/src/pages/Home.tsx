@@ -56,6 +56,7 @@ export const Home = () => {
   });
   const [showParameterForm, setShowParameterForm] = useState(false);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [printMode, setPrintMode] = useState(false);
 
   // Recarrega os dados quando a página é montada
   useEffect(() => {
@@ -72,6 +73,10 @@ export const Home = () => {
 
   const handleExportPDF = () => {
     try {
+      if (!queryResults || queryResults.length === 0) {
+        throw new Error('Nenhum dado disponível para exportar');
+      }
+
       const doc = new jsPDF();
       
       // Configuração do cabeçalho do PDF
@@ -80,10 +85,16 @@ export const Home = () => {
       doc.setFontSize(10);
       doc.text(`Data de geração: ${new Date().toLocaleDateString('pt-BR')}`, 14, 22);
       
+      // Extrair colunas do primeiro resultado se não estiverem definidas
+      const columns = resultColumns.length > 0 ? resultColumns : Object.keys(queryResults[0]).map(key => ({
+        key,
+        header: key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ')
+      }));
+      
       // Preparar dados para a tabela
-      const headers = resultColumns.map(col => col.header);
+      const headers = columns.map(col => col.header);
       const data = queryResults.map(row => 
-        resultColumns.map(col => row[col.key]?.toString() || '')
+        columns.map(col => row[col.key]?.toString() || '')
       );
       
       // Configuração e geração da tabela
@@ -115,6 +126,7 @@ export const Home = () => {
         confirmButtonColor: 'var(--primary)'
       });
     } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
       Swal.fire({
         title: 'Erro',
         text: 'Erro ao gerar o PDF.',
@@ -126,10 +138,20 @@ export const Home = () => {
 
   const handleExportCSV = () => {
     try {
+      if (!queryResults || queryResults.length === 0) {
+        throw new Error('Nenhum dado disponível para exportar');
+      }
+
+      // Extrair colunas do primeiro resultado se não estiverem definidas
+      const columns = resultColumns.length > 0 ? resultColumns : Object.keys(queryResults[0]).map(key => ({
+        key,
+        header: key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ')
+      }));
+      
       // Preparar cabeçalhos e dados
-      const headers = resultColumns.map(col => col.header);
+      const headers = columns.map(col => col.header);
       const data = queryResults.map(row => 
-        resultColumns.map(col => row[col.key]?.toString() || '')
+        columns.map(col => row[col.key]?.toString() || '')
       );
       
       // Criar conteúdo CSV
@@ -152,6 +174,7 @@ export const Home = () => {
         confirmButtonColor: 'var(--primary)'
       });
     } catch (error) {
+      console.error('Erro ao gerar CSV:', error);
       Swal.fire({
         title: 'Erro',
         text: 'Erro ao gerar o CSV.',
@@ -163,10 +186,20 @@ export const Home = () => {
 
   const handleExportTXT = () => {
     try {
+      if (!queryResults || queryResults.length === 0) {
+        throw new Error('Nenhum dado disponível para exportar');
+      }
+
+      // Extrair colunas do primeiro resultado se não estiverem definidas
+      const columns = resultColumns.length > 0 ? resultColumns : Object.keys(queryResults[0]).map(key => ({
+        key,
+        header: key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ')
+      }));
+      
       // Preparar cabeçalhos e dados
-      const headers = resultColumns.map(col => col.header);
+      const headers = columns.map(col => col.header);
       const data = queryResults.map(row => 
-        resultColumns.map(col => row[col.key]?.toString() || '')
+        columns.map(col => row[col.key]?.toString() || '')
       );
       
       // Criar conteúdo TXT
@@ -189,6 +222,7 @@ export const Home = () => {
         confirmButtonColor: 'var(--primary)'
       });
     } catch (error) {
+      console.error('Erro ao gerar TXT:', error);
       Swal.fire({
         title: 'Erro',
         text: 'Erro ao gerar o TXT.',
@@ -225,8 +259,12 @@ export const Home = () => {
         return;
       }
 
-      const response = await api.post('/query/execute', {
-        query: report.query
+      // Buscar a query pelo ID
+      const queryResponse = await api.get(`/queries/${report.queryId}`);
+      const queryData = queryResponse.data;
+
+      const response = await api.post('/queries/execute', {
+        query: queryData.query
       });
 
       if (response.data && response.data.length > 0) {
@@ -248,6 +286,7 @@ export const Home = () => {
         });
       }
     } catch (error: any) {
+      console.error('Erro ao executar query:', error);
       Swal.fire({
         title: 'Erro',
         text: error.response?.data?.error || 'Erro ao executar a query.',
@@ -295,8 +334,12 @@ export const Home = () => {
   const handleDownloadPDF = async (report: any) => {
     try {
       setIsLoading(true);
-      const response = await api.post('/query/execute', {
-        query: report.query
+      // Buscar a query pelo ID
+      const queryResponse = await api.get(`/queries/${report.queryId}`);
+      const queryData = queryResponse.data;
+
+      const response = await api.post('/queries/execute', {
+        query: queryData.query
       });
 
       if (response.data && response.data.length > 0) {
@@ -371,18 +414,21 @@ export const Home = () => {
     try {
       setIsLoading(true);
       setSelectedReport(report);
+      setPrintMode(true);
 
       // Verificar se o relatório tem parâmetros
       if (report.hasParameters && report.parametros && report.parametros.length > 0) {
-        // Mostrar o formulário de parâmetros
         setShowParameterForm(true);
         setIsLoading(false);
         return;
       }
 
       // Se não tiver parâmetros, executa direto
-      const response = await api.post('/query/execute', {
-        query: report.query
+      const queryResponse = await api.get(`/queries/${report.queryId}`);
+      const queryData = queryResponse.data;
+
+      const response = await api.post('/queries/execute', {
+        query: queryData.query
       });
 
       if (response.data && response.data.length > 0) {
@@ -404,6 +450,7 @@ export const Home = () => {
         });
       }
     } catch (error: any) {
+      console.error('Erro ao executar query:', error);
       Swal.fire({
         title: 'Erro',
         text: error.response?.data?.error || 'Erro ao executar a query.',
@@ -460,22 +507,18 @@ export const Home = () => {
   const handleParameterSubmit = async (parameters: any) => {
     try {
       setIsLoading(true);
-      setShowParameterForm(false);
 
-      if (!selectedReport) return;
+      // Buscar a query pelo ID
+      const queryResponse = await api.get(`/queries/${selectedReport.queryId}`);
+      const queryData = queryResponse.data;
 
-      console.log('Enviando query com parâmetros:', {
-        query: selectedReport.query,
-        parameters,
-        parametrosDefinidos: selectedReport.parametros
-      });
-
-      const response = await api.post('/query/execute', {
-        query: selectedReport.query,
+      const response = await api.post('/queries/execute', {
+        query: queryData.query,
         parameters
       });
 
       if (response.data && response.data.length > 0) {
+        // Extrair as colunas do primeiro resultado
         const columns = Object.keys(response.data[0]).map(key => ({
           key,
           header: key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ')
@@ -483,12 +526,15 @@ export const Home = () => {
 
         setResultColumns(columns);
         setQueryResults(response.data);
-        
-        // Se a ação veio do botão de imprimir, abre o modal de exportação
-        if (selectedReport.fromPrintButton) {
+
+        // Se estiver no modo de impressão, mostrar modal de exportação
+        if (printMode) {
+          setShowParameterForm(false);
           setShowExportModal(true);
         } else {
+          // Modo normal - mostrar resultados na tela
           setShowResults(true);
+          setShowParameterForm(false);
         }
       } else {
         Swal.fire({
@@ -500,11 +546,6 @@ export const Home = () => {
       }
     } catch (error: any) {
       console.error('Erro ao executar query:', error);
-      console.error('Detalhes do erro:', {
-        status: error.response?.status,
-        data: error.response?.data,
-        message: error.message
-      });
       Swal.fire({
         title: 'Erro',
         text: error.response?.data?.error || 'Erro ao executar a query.',
@@ -513,10 +554,6 @@ export const Home = () => {
       });
     } finally {
       setIsLoading(false);
-      // Limpar a flag após o processamento
-      if (selectedReport) {
-        selectedReport.fromPrintButton = false;
-      }
     }
   };
 
@@ -667,8 +704,18 @@ export const Home = () => {
 
       <ExportModal
         isOpen={showExportModal}
-        onClose={() => setShowExportModal(false)}
-        onExport={handleExport}
+        onClose={() => {
+          setShowExportModal(false);
+          if (printMode) {
+            setPrintMode(false);
+          }
+        }}
+        onExport={(format) => {
+          handleExport(format);
+          if (printMode) {
+            setPrintMode(false);
+          }
+        }}
       />
 
       <UpdateReportModal

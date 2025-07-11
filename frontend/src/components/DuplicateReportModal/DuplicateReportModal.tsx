@@ -4,7 +4,7 @@ import { Input } from '../Input/Input';
 import { Select } from '../Select/Select';
 import { TextArea } from '../TextArea/TextArea';
 import { Button } from '../Button/Button';
-import { ParameterForm } from '../ParameterForm/ParameterForm';
+import { ParameterInputForm } from '../ParameterForm/ParameterInputForm';
 import { ParametersTable } from '../ParametersTable/ParametersTable';
 import { api } from '../../services/api';
 import Swal from 'sweetalert2';
@@ -22,11 +22,17 @@ interface TipoRelatorio {
   tipo: string;
 }
 
+interface Query {
+  id: number;
+  query: string;
+}
+
 interface Report {
   id: number;
   nome: string;
   descricao: string;
-  query: string;
+  queryId: number | null;
+  query: Query | null;
   tipo_relatorio_id: number;
   has_parameters: boolean;
   parameters: Parameter[];
@@ -86,7 +92,7 @@ export const DuplicateReportModal: React.FC<DuplicateReportModalProps> = ({
     if (report && show) {
       setNome(report.nome);
       setDescricao(report.descricao || '');
-      setQuery(report.query || '');
+      setQuery(report.query?.query || '');
       setTipoRelatorioId(report.tipo_relatorio_id?.toString() || '');
       setHasParameters(report.has_parameters || false);
       setParameters(report.parameters || []);
@@ -185,17 +191,23 @@ export const DuplicateReportModal: React.FC<DuplicateReportModalProps> = ({
     }
 
     try {
-      await api.put(`/relatorios/${report.id}`, {
+      // Primeiro, criar uma nova query
+      const queryResponse = await api.post('/queries', {
+        query: query
+      });
+
+      // Depois, criar o relatório com a referência para a nova query
+      await api.post('/relatorios', {
         nome,
         descricao,
-        query,
+        query_id: queryResponse.data.id,
         tipo_relatorio_id: Number(tipoRelatorioId),
         has_parameters: hasParameters,
         parameters: hasParameters ? parameters : []
       });
 
       Swal.fire({
-        title: 'Relatório atualizado com sucesso!',
+        title: 'Relatório duplicado com sucesso!',
         icon: 'success',
         confirmButtonColor: 'var(--primary)'
       });
@@ -203,10 +215,10 @@ export const DuplicateReportModal: React.FC<DuplicateReportModalProps> = ({
       onSuccess();
       onHide();
     } catch (error) {
-      console.error('Erro ao atualizar relatório:', error);
+      console.error('Erro ao duplicar relatório:', error);
       Swal.fire({
         title: 'Erro',
-        text: 'Ocorreu um erro ao atualizar o relatório.',
+        text: 'Ocorreu um erro ao duplicar o relatório.',
         icon: 'error',
         confirmButtonColor: 'var(--primary)'
       });
@@ -216,7 +228,7 @@ export const DuplicateReportModal: React.FC<DuplicateReportModalProps> = ({
   return (
     <Modal show={show} onHide={onHide} size="xl" centered dialogClassName="wide-modal">
       <Modal.Header closeButton>
-        <Modal.Title>Atualizar Relatório</Modal.Title>
+        <Modal.Title>Duplicar Relatório</Modal.Title>
       </Modal.Header>
       <Modal.Body>
         <form onSubmit={handleSubmit} className="register-form">
@@ -247,70 +259,44 @@ export const DuplicateReportModal: React.FC<DuplicateReportModalProps> = ({
           </div>
 
           <TextArea
-            label="Query"
-            labelExtra={<span className="required-asterisk">*</span>}
-            value={query}
-            onChange={handleQueryChange}
-            placeholder="Digite a query SQL do relatório"
-            error={errors.query}
-            maxLength={2000}
-            showCounter
-          />
-
-          <div className="available-tables">
-            <div className="available-tables-title">Tabelas disponíveis para consulta</div>
-            <div className="table-tags">
-              <span className="table-tag">clientes</span>
-              <span className="table-tag">produtos</span>
-              <span className="table-tag">vendas</span>
-              <span className="table-tag">venda_itens</span>
-            </div>
-          </div>
-
-          <TextArea
             label="Descrição"
             labelExtra={<span className="required-asterisk">*</span>}
             value={descricao}
             onChange={handleDescricaoChange}
             placeholder="Digite a descrição do relatório"
             error={errors.descricao}
-            maxLength={400}
-            showCounter
-            style={{ minHeight: '80px' }}
+          />
+
+          <TextArea
+            label="Query"
+            labelExtra={<span className="required-asterisk">*</span>}
+            value={query}
+            onChange={handleQueryChange}
+            placeholder="Digite a query SQL"
+            error={errors.query}
+            style={{ height: '200px' }}
           />
 
           <div className="parameters-section">
             <div className="parameters-header">
-              <label className="parameters-label">
-                A query tem parâmetros?
-                <div className="radio-group">
-                  <label className="radio-label">
-                    <input
-                      type="radio"
-                      name="hasParameters"
-                      value="yes"
-                      checked={hasParameters}
-                      onChange={() => setHasParameters(true)}
-                    />
-                    Sim
-                  </label>
-                  <label className="radio-label">
-                    <input
-                      type="radio"
-                      name="hasParameters"
-                      value="no"
-                      checked={!hasParameters}
-                      onChange={() => setHasParameters(false)}
-                    />
-                    Não
-                  </label>
-                </div>
-              </label>
+              <h4>Parâmetros</h4>
+              <div className="form-check">
+                <input
+                  type="checkbox"
+                  className="form-check-input"
+                  id="hasParameters"
+                  checked={hasParameters}
+                  onChange={(e) => setHasParameters(e.target.checked)}
+                />
+                <label className="form-check-label" htmlFor="hasParameters">
+                  Este relatório possui parâmetros
+                </label>
+              </div>
             </div>
 
             {hasParameters && (
               <>
-                <ParameterForm onAddParameter={handleAddParameter} />
+                <ParameterInputForm onAddParameter={handleAddParameter} />
                 <ParametersTable
                   parameters={parameters}
                   onDeleteParameter={handleDeleteParameter}
@@ -325,7 +311,7 @@ export const DuplicateReportModal: React.FC<DuplicateReportModalProps> = ({
           Cancelar
         </Button>
         <Button variant="primary" onClick={handleSubmit}>
-          Atualizar Relatório
+          Duplicar
         </Button>
       </Modal.Footer>
     </Modal>

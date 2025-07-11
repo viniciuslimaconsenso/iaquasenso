@@ -6,7 +6,8 @@ class RelatorioController {
       const relatorios = await prisma.relatorio.findMany({
         include: {
           tipoRelatorio: true,
-          parametros: true
+          parametros: true,
+          query: true
         }
       });
       return res.json(relatorios);
@@ -18,13 +19,14 @@ class RelatorioController {
 
   async store(req, res) {
     try {
-      const { nome, descricao, query, tipo_relatorio_id, has_parameters, parameters } = req.body;
+      const { nome, descricao, query_id, tipo_relatorio_id, has_parameters, parameters } = req.body;
 
+      // Criar o relatório associado à query
       const relatorio = await prisma.relatorio.create({
         data: {
           nome,
           descricao,
-          query,
+          queryId: query_id,
           hasParameters: has_parameters,
           tipoRelatorioId: tipo_relatorio_id,
           parametros: has_parameters && parameters ? {
@@ -37,7 +39,8 @@ class RelatorioController {
           } : undefined
         },
         include: {
-          parametros: true
+          parametros: true,
+          query: true
         }
       });
 
@@ -56,7 +59,8 @@ class RelatorioController {
         where: { id: Number(id) },
         include: {
           tipoRelatorio: true,
-          parametros: true
+          parametros: true,
+          query: true
         }
       });
 
@@ -76,12 +80,35 @@ class RelatorioController {
       const { id } = req.params;
       const { nome, descricao, query, tipo_relatorio_id, has_parameters, parameters } = req.body;
 
+      // Primeiro, atualizar ou criar o registro de Query
+      let queryId;
+      const existingRelatorio = await prisma.relatorio.findUnique({
+        where: { id: Number(id) },
+        include: { query: true }
+      });
+
+      if (existingRelatorio.queryId) {
+        // Atualizar query existente
+        await prisma.query.update({
+          where: { id: existingRelatorio.queryId },
+          data: { query }
+        });
+        queryId = existingRelatorio.queryId;
+      } else {
+        // Criar nova query
+        const queryRecord = await prisma.query.create({
+          data: { query }
+        });
+        queryId = queryRecord.id;
+      }
+
+      // Depois, atualizar o relatório
       const relatorio = await prisma.relatorio.update({
         where: { id: Number(id) },
         data: {
           nome,
           descricao,
-          query,
+          queryId,
           hasParameters: has_parameters,
           tipoRelatorioId: tipo_relatorio_id,
           parametros: {
@@ -97,7 +124,8 @@ class RelatorioController {
           }
         },
         include: {
-          parametros: true
+          parametros: true,
+          query: true
         }
       });
 
@@ -112,6 +140,20 @@ class RelatorioController {
     try {
       const { id } = req.params;
 
+      // Primeiro, buscar o relatório para obter o ID da query
+      const relatorio = await prisma.relatorio.findUnique({
+        where: { id: Number(id) },
+        select: { queryId: true }
+      });
+
+      if (relatorio && relatorio.queryId) {
+        // Deletar a query associada
+        await prisma.query.delete({
+          where: { id: relatorio.queryId }
+        });
+      }
+
+      // Depois, deletar o relatório
       await prisma.relatorio.delete({
         where: { id: Number(id) }
       });
