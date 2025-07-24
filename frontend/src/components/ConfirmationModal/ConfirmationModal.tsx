@@ -9,6 +9,7 @@ interface ConfirmationModalProps {
   onClose: () => void;
   confirmButtonText?: string;
   confirmButtonVariant?: string;
+  isDelete?: boolean; // new prop
 }
 
 export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
@@ -18,7 +19,8 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   onConfirm,
   onClose,
   confirmButtonText = 'Confirmar',
-  confirmButtonVariant = 'primary'
+  confirmButtonVariant = 'primary',
+  isDelete = false // default false
 }) => {
   if (!isOpen) return null;
 
@@ -34,7 +36,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
 
   return (
     <div className="modal-overlay">
-      <div className="modal-content">
+      <div className={`modal-content${isDelete ? ' delete-modal' : ''}`}>
         <h2 className="modal-title">{title}</h2>
         <p className="modal-message">{message}</p>
         <div className="modal-actions">

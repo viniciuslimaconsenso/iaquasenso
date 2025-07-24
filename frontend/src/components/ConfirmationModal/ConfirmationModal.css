@@ -42,3 +42,10 @@
   min-width: 120px;
   padding: 0.5rem 1rem;
 }
+
+.delete-modal {
+  width: 35% !important;
+  min-width: 320px;
+  max-width: 500px;
+  margin: 0 auto;
+}

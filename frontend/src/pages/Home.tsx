@@ -693,6 +693,7 @@ export const Home = () => {
         message={modalConfig.message}
         confirmButtonText={modalConfig.confirmButtonText}
         confirmButtonVariant={modalConfig.confirmButtonVariant}
+        isDelete={modalConfig.confirmButtonVariant === 'danger'}
       />
 
       <ParameterForm

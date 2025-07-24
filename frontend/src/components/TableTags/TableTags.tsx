@@ -25,12 +25,25 @@ const availableTables: TableInfo[] = [
   {
     name: 'vendas',
     label: 'Vendas',
-    defaultQuery: 'SELECT id, cliente_id, data_venda, valor_total FROM vendas'
+    defaultQuery: `SELECT 
+      v.id as venda_id, 
+      c.nome as cliente,
+      TO_CHAR(v.data_venda, 'DD/MM/YYYY') as data_venda,
+      p.nome as produto,
+      vi.quantidade,
+      vi.preco_unitario,
+      (vi.quantidade * vi.preco_unitario) as valor_item,
+      COALESCE(SUM(vi.quantidade * vi.preco_unitario) OVER (PARTITION BY v.id), 0) as valor_total_venda
+    FROM vendas v 
+    LEFT JOIN venda_itens vi ON vi.venda_id = v.id 
+    LEFT JOIN clientes c ON c.id = v.cliente_id
+    LEFT JOIN produtos p ON p.id = vi.produto_id
+    ORDER BY v.id DESC, p.nome`
   },
   {
     name: 'venda_itens',
     label: 'Itens de Venda',
-    defaultQuery: 'SELECT id, venda_id, produto_id, quantidade, valor_unitario, valor_total FROM venda_itens'
+    defaultQuery: 'SELECT id, venda_id, produto_id, quantidade, preco_unitario, (quantidade * preco_unitario) as valor_total FROM venda_itens'
   }
 ];
 
