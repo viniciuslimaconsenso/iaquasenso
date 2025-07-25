@@ -10,6 +10,12 @@ import './UpdateReportModal.css';
 import { ParametersTable } from '../ParametersTable/ParametersTable';
 import { ParameterInputForm } from '../ParameterForm/ParameterInputForm';
 
+const PROHIBITED_WORDS = [
+  'insert', 'update', 'delete', 'drop', 'truncate', 'alter',
+  'create', 'replace', 'exec', 'execute', 'relatorios',
+  'tipos_relatorio', ';', '--', '/*', '*/', 'select *'
+];
+
 interface UpdateReportModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -43,7 +49,8 @@ export const UpdateReportModal: React.FC<UpdateReportModalProps> = ({
     parameters: ''
   });
 
-  useEffect(() => {
+  // Função para resetar os campos para os valores originais
+  const resetFields = () => {
     if (report) {
       setNome(report.nome || '');
       setDescricao(report.descricao || '');
@@ -52,9 +59,72 @@ export const UpdateReportModal: React.FC<UpdateReportModalProps> = ({
       setHasParameters(report.hasParameters || false);
       setParameters(report.parametros || []);
     }
-  }, [report]);
+    setErrors({
+      nome: '',
+      descricao: '',
+      tipo: '',
+      query: '',
+      parameters: ''
+    });
+  };
+
+  // Reseta os campos quando o modal é aberto
+  useEffect(() => {
+    if (isOpen) {
+      resetFields();
+    }
+  }, [isOpen, report]);
+
+  // Handler para o botão cancelar
+  const handleCancel = () => {
+    resetFields();
+    onClose();
+  };
+
+  const checkProhibitedWords = (value: string) => {
+    const lowerValue = value.toLowerCase();
+    return PROHIBITED_WORDS.some(word => lowerValue.includes(word.toLowerCase()));
+  };
+
+  const handleQueryChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    setQuery(value);
+    
+    // Validar palavras proibidas
+    if (value.toLowerCase().includes(';') || 
+        value.toLowerCase().includes('--') || 
+        value.toLowerCase().includes('/*') || 
+        value.toLowerCase().includes('*/') || 
+        /select\s+\*\s+from/i.test(value) ||
+        value.toLowerCase().includes('insert') ||
+        value.toLowerCase().includes('update') ||
+        value.toLowerCase().includes('delete') ||
+        value.toLowerCase().includes('drop') ||
+        value.toLowerCase().includes('truncate') ||
+        value.toLowerCase().includes('alter') ||
+        value.toLowerCase().includes('create') ||
+        value.toLowerCase().includes('replace') ||
+        value.toLowerCase().includes('exec') ||
+        value.toLowerCase().includes('execute') ||
+        value.toLowerCase().includes('relatorios') ||
+        value.toLowerCase().includes('tipos_relatorio')) {
+      setErrors(prev => ({ ...prev, query: 'Comando não autorizado' }));
+      return;
+    }
+
+    setErrors(prev => ({ ...prev, query: '' }));
+  };
 
   const validateParameters = () => {
+    // Verificar se marcou que tem parâmetros mas não tem nenhum cadastrado
+    if (hasParameters && parameters.length === 0) {
+      setErrors(prev => ({ 
+        ...prev, 
+        parameters: 'Você marcou que tem parâmetros, mas nenhum parâmetro foi adicionado' 
+      }));
+      return false;
+    }
+
     // Verificar se há parâmetros duplicados
     const parameterNames = parameters.map(p => p.nome.toLowerCase());
     const hasDuplicates = parameterNames.length !== new Set(parameterNames).size;
@@ -107,7 +177,24 @@ export const UpdateReportModal: React.FC<UpdateReportModalProps> = ({
       nome: nome.trim() === '' ? 'Nome é obrigatório' : '',
       descricao: descricao.trim() === '' ? 'Descrição é obrigatória' : '',
       tipo: tipo === '' ? 'Tipo é obrigatório' : '',
-      query: query.trim() === '' ? 'Query é obrigatória' : '',
+      query: query.trim() === '' ? 'Query é obrigatória' : 
+             (query.toLowerCase().includes(';') || 
+              query.toLowerCase().includes('--') || 
+              query.toLowerCase().includes('/*') || 
+              query.toLowerCase().includes('*/') || 
+              /select\s+\*\s+from/i.test(query) ||
+              query.toLowerCase().includes('insert') ||
+              query.toLowerCase().includes('update') ||
+              query.toLowerCase().includes('delete') ||
+              query.toLowerCase().includes('drop') ||
+              query.toLowerCase().includes('truncate') ||
+              query.toLowerCase().includes('alter') ||
+              query.toLowerCase().includes('create') ||
+              query.toLowerCase().includes('replace') ||
+              query.toLowerCase().includes('exec') ||
+              query.toLowerCase().includes('execute') ||
+              query.toLowerCase().includes('relatorios') ||
+              query.toLowerCase().includes('tipos_relatorio')) ? 'Comando não autorizado' : '',
       parameters: ''
     };
 
@@ -143,8 +230,8 @@ export const UpdateReportModal: React.FC<UpdateReportModalProps> = ({
         return;
       }
 
-      const response = await api.post(`/relatorios/${report.id}/parametros`, parameter);
-      setParameters([...parameters, response.data]);
+      // Adicionar o parâmetro localmente
+      setParameters([...parameters, parameter]);
       setHasParameters(true);
 
       // Limpar erro de parâmetros ao adicionar um novo
@@ -152,7 +239,7 @@ export const UpdateReportModal: React.FC<UpdateReportModalProps> = ({
     } catch (error: any) {
       Swal.fire({
         title: 'Erro',
-        text: error.response?.data?.error || 'Erro ao adicionar parâmetro.',
+        text: 'Erro ao adicionar parâmetro.',
         icon: 'error',
         confirmButtonColor: 'var(--primary)'
       });
@@ -161,8 +248,7 @@ export const UpdateReportModal: React.FC<UpdateReportModalProps> = ({
 
   const handleDeleteParameter = async (index: number) => {
     try {
-      const parameter = parameters[index];
-      await api.delete(`/relatorios/${report.id}/parametros/${parameter.id}`);
+      // Remover o parâmetro localmente
       const updatedParameters = parameters.filter((_, i) => i !== index);
       setParameters(updatedParameters);
       setHasParameters(updatedParameters.length > 0);
@@ -172,7 +258,7 @@ export const UpdateReportModal: React.FC<UpdateReportModalProps> = ({
     } catch (error: any) {
       Swal.fire({
         title: 'Erro',
-        text: error.response?.data?.error || 'Erro ao excluir parâmetro.',
+        text: 'Erro ao excluir parâmetro.',
         icon: 'error',
         confirmButtonColor: 'var(--primary)'
       });
@@ -180,6 +266,17 @@ export const UpdateReportModal: React.FC<UpdateReportModalProps> = ({
   };
 
   const handleSubmit = async () => {
+    // Validar se tem parâmetros marcado mas não tem parâmetros cadastrados
+    if (hasParameters && parameters.length === 0) {
+      Swal.fire({
+        title: 'Erro de Validação',
+        text: 'Você marcou que tem parâmetros, mas nenhum parâmetro foi adicionado',
+        icon: 'error',
+        confirmButtonColor: 'var(--primary)'
+      });
+      return;
+    }
+
     if (!validateForm()) {
       // Se houver erro de parâmetros, mostrar alerta
       if (errors.parameters) {
@@ -206,13 +303,22 @@ export const UpdateReportModal: React.FC<UpdateReportModalProps> = ({
         report.queryId = queryResponse.data.id;
       }
 
-      // Depois, atualizar o relatório
+      // Preparar os parâmetros para envio
+      const parametrosFormatados = parameters.map(param => ({
+        nome: param.nome,
+        tipo: param.tipo,
+        tamanho: param.tamanho,
+        label: param.label
+      }));
+
+      // Depois, atualizar o relatório com os parâmetros
       await api.put(`/relatorios/${report.id}`, {
         nome,
         descricao,
         tipo_relatorio_id: report.tipoRelatorioId,
         query_id: report.queryId,
-        hasParameters
+        hasParameters,
+        parameters: hasParameters ? parametrosFormatados : []  // Incluindo os parâmetros formatados
       });
 
       Swal.fire({
@@ -235,7 +341,24 @@ export const UpdateReportModal: React.FC<UpdateReportModalProps> = ({
   };
 
   return (
-    <Modal show={isOpen} onHide={onClose} centered className="update-report-modal" size="lg">
+    <Modal show={isOpen} onHide={() => {
+      if (report) {
+        setNome(report.nome || '');
+        setDescricao(report.descricao || '');
+        setTipo(report.tipoRelatorio?.tipo || '');
+        setQuery(report.query?.query || '');
+        setHasParameters(report.hasParameters || false);
+        setParameters(report.parametros || []);
+      }
+      setErrors({
+        nome: '',
+        descricao: '',
+        tipo: '',
+        query: '',
+        parameters: ''
+      });
+      onClose();
+    }} centered className="update-report-modal" size="lg">
       <Modal.Header closeButton>
         <Modal.Title>Atualizar Relatório</Modal.Title>
       </Modal.Header>
@@ -265,7 +388,33 @@ export const UpdateReportModal: React.FC<UpdateReportModalProps> = ({
           <TextArea
             label="Query SQL"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value;
+              setQuery(value);
+              
+              // Validar palavras proibidas
+              if (value.toLowerCase().includes(';') || 
+                  value.toLowerCase().includes('--') || 
+                  value.toLowerCase().includes('/*') || 
+                  value.toLowerCase().includes('*/') || 
+                  /select\s+\*\s+from/i.test(value) ||
+                  value.toLowerCase().includes('insert') ||
+                  value.toLowerCase().includes('update') ||
+                  value.toLowerCase().includes('delete') ||
+                  value.toLowerCase().includes('drop') ||
+                  value.toLowerCase().includes('truncate') ||
+                  value.toLowerCase().includes('alter') ||
+                  value.toLowerCase().includes('create') ||
+                  value.toLowerCase().includes('replace') ||
+                  value.toLowerCase().includes('exec') ||
+                  value.toLowerCase().includes('execute') ||
+                  value.toLowerCase().includes('relatorios') ||
+                  value.toLowerCase().includes('tipos_relatorio')) {
+                setErrors(prev => ({ ...prev, query: 'Comando não autorizado' }));
+                return;
+              }
+              setErrors(prev => ({ ...prev, query: '' }));
+            }}
             placeholder="Digite a query SQL"
             error={errors.query}
             style={{ height: '200px' }}
@@ -322,7 +471,24 @@ export const UpdateReportModal: React.FC<UpdateReportModalProps> = ({
       </Modal.Body>
       <Modal.Footer>
         <div className="d-flex justify-content-between w-100">
-          <Button variant="outline-custom" onClick={onClose}>
+          <Button variant="outline-custom" onClick={() => {
+            if (report) {
+              setNome(report.nome || '');
+              setDescricao(report.descricao || '');
+              setTipo(report.tipoRelatorio?.tipo || '');
+              setQuery(report.query?.query || '');
+              setHasParameters(report.hasParameters || false);
+              setParameters(report.parametros || []);
+            }
+            setErrors({
+              nome: '',
+              descricao: '',
+              tipo: '',
+              query: '',
+              parameters: ''
+            });
+            onClose();
+          }}>
             Cancelar
           </Button>
           <Button variant="primary" onClick={handleSubmit}>

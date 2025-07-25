@@ -251,18 +251,37 @@ export const Home = () => {
       setIsLoading(true);
       setSelectedReport(report);
 
-      // Check if report has parameters
-      if (report.hasParameters && report.parametros && report.parametros.length > 0) {
-        // Show parameter form modal
+      // Buscar a query pelo ID primeiro
+      const queryResponse = await api.get(`/queries/${report.queryId}`);
+      const queryData = queryResponse.data;
+
+      // Verificar se a query tem parâmetros no formato :nome_parametro
+      const queryParams = queryData.query.match(/:[a-zA-Z_][a-zA-Z0-9_]*/g) || [];
+      if (queryParams.length > 0) {
+        // Extrair os nomes dos parâmetros (remover os :)
+        const paramNames = queryParams.map((param: string) => param.substring(1));
+
+        // Se o relatório já tem parâmetros definidos, usar eles
+        let parametrosFormatados = paramNames.map((nome: string) => {
+          const paramExistente = report.parametros?.find((p: { nome: string }) => p.nome === nome);
+          return paramExistente || {
+            nome,
+            tipo: 'text', // tipo padrão
+            tamanho: '50', // tamanho padrão
+            label: nome // usar o nome como label
+          };
+        });
+
+        setSelectedReport({
+          ...report,
+          parametros: parametrosFormatados
+        });
         setShowParameterForm(true);
         setIsLoading(false);
         return;
       }
 
-      // Buscar a query pelo ID
-      const queryResponse = await api.get(`/queries/${report.queryId}`);
-      const queryData = queryResponse.data;
-
+      // Se não tem parâmetros, executar a query diretamente
       const response = await api.post('/queries/execute', {
         query: queryData.query
       });
@@ -504,7 +523,7 @@ export const Home = () => {
     setShowDuplicateModal(true);
   };
 
-  const handleParameterSubmit = async (parameters: any) => {
+  const handleParameterSubmit = async (parameters: Record<string, any>) => {
     try {
       setIsLoading(true);
 
@@ -512,9 +531,10 @@ export const Home = () => {
       const queryResponse = await api.get(`/queries/${selectedReport.queryId}`);
       const queryData = queryResponse.data;
 
+      // Enviar a query com os parâmetros
       const response = await api.post('/queries/execute', {
         query: queryData.query,
-        parameters
+        parameters: parameters
       });
 
       if (response.data && response.data.length > 0) {

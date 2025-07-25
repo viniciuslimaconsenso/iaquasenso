@@ -43,14 +43,39 @@ export const ParameterForm: React.FC<ParameterFormProps> = ({
 
   const handleSubmit = () => {
     if (validateForm()) {
-      onSubmit(parameterValues);
+      // Formatar os parâmetros de acordo com seus tipos
+      const formattedParameters: Record<string, any> = {};
+
+      parameters.forEach(param => {
+        const value = parameterValues[param.nome];
+        
+        // Converter o valor de acordo com o tipo do parâmetro
+        if (param.tipo === 'number') {
+          formattedParameters[param.nome] = Number(value);
+        } else if (param.tipo === 'date') {
+          formattedParameters[param.nome] = value; // Manter o formato YYYY-MM-DD
+        } else if (param.tipo === 'boolean') {
+          formattedParameters[param.nome] = value === 'true';
+        } else {
+          formattedParameters[param.nome] = value;
+        }
+      });
+
+      onSubmit(formattedParameters);
     }
   };
 
-  const handleInputChange = (paramName: string, value: string) => {
+  const handleInputChange = (paramName: string, value: string, param: Parameter) => {
+    let processedValue = value;
+
+    // Para checkbox, usar o checked em vez do value
+    if (param.tipo === 'boolean') {
+      processedValue = (event.target as HTMLInputElement).checked ? 'true' : 'false';
+    }
+
     setParameterValues(prev => ({
       ...prev,
-      [paramName]: value
+      [paramName]: processedValue
     }));
 
     // Limpa o erro quando o usuário começa a digitar
@@ -74,10 +99,15 @@ export const ParameterForm: React.FC<ParameterFormProps> = ({
               <Input
                 label={param.nome}
                 value={parameterValues[param.nome] || ''}
-                onChange={(e) => handleInputChange(param.nome, e.target.value)}
+                onChange={(e) => handleInputChange(param.nome, e.target.value, param)}
                 placeholder={`Digite o valor para ${param.nome}`}
                 error={errors[param.nome]}
-                type={param.tipo === 'number' ? 'number' : 'text'}
+                type={
+                  param.tipo === 'number' ? 'number' :
+                  param.tipo === 'date' ? 'date' :
+                  param.tipo === 'boolean' ? 'checkbox' :
+                  'text'
+                }
               />
             </div>
           ))}
